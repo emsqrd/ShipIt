@@ -13,8 +13,9 @@ app.get('/health', (req, res) => {
 });
 
 app.get('/definitions', async (req, res) => {
-  const project = '\\RCT-CI';
-  const buildDefinitionsUrl = `https://dev.azure.com/CL-Protect/RCT/_apis/build/definitions?path=${encodeURIComponent(project)}&api-version=7.1`;
+  const azureBaseUrl = process.env.AZURE_BASE_URL;
+  const ciDirectory = process.env.BUILD_DEFINITION_FOLDER;
+  const buildDefinitionsUrl = `${azureBaseUrl}/build/definitions?path=${encodeURIComponent(ciDirectory)}&api-version=7.1`;
 
   const response = await fetch(buildDefinitionsUrl, {
     headers: {
@@ -26,6 +27,8 @@ app.get('/definitions', async (req, res) => {
     res.status(response.status).json({ error: response.statusText });
     return;
   }
+
+  console.log(response.url);
 
   const data = await response.json();
 
