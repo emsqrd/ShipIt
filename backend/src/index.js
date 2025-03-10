@@ -1,8 +1,8 @@
-import dotenv from 'dotenv';
+// Import environment variables first - before any other imports
+import './config/env.js';
+
 import express from 'express';
 import azureDevOpsRouter from './routes/azureDevOps.js';
-
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;

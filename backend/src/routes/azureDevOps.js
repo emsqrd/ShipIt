@@ -1,12 +1,24 @@
 import express from 'express';
 
 const router = express.Router();
+const azureBaseUrl = process.env.AZURE_BASE_URL;
+const directory = encodeURIComponent(process.env.BUILD_DEFINITION_FOLDER);
 
-// Missing variables declaration
-const azureBaseUrl = process.env.AZURE_BASE_URL || 'https://dev.azure.com/yourorg';
-const directory = process.env.AZURE_DIRECTORY || '';
+// Using Intl.DateTimeFormat to localize and format the date.
+const dtFormatter = new Intl.DateTimeFormat('en-US', {
+  month: '2-digit',
+  day: '2-digit',
+  year: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  hour12: true,
+});
 
-// Empty placeholder route - implementing a stub instead of empty function with unused parameters
+const formatLocalDate = (date) => {
+  if (!date) return null;
+  return dtFormatter.format(new Date(date)).replace(/\//g, '-').replace(',', '');
+};
+
 router.get('/releasedVersions', (req, res) => {
   res.json({ message: 'Not implemented yet' });
 });
@@ -22,6 +34,7 @@ router.get('/definitions', async (_, res) => {
   });
 
   if (!definitionsRes.ok) {
+    console.log(definitionsRes);
     res.status(definitionsRes.status).json({ error: definitionsRes.statusText });
     return;
   }
@@ -40,21 +53,6 @@ router.get('/definitions', async (_, res) => {
   const definition = await definitionsRes.json();
   const buildsData = await buildsRes.json();
   const builds = buildsData.value.filter((build) => build.buildNumber.includes('int'));
-
-  // Using Intl.DateTimeFormat to localize and format the date.
-  const dtFormatter = new Intl.DateTimeFormat('en-US', {
-    month: '2-digit',
-    day: '2-digit',
-    year: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: true,
-  });
-
-  const formatLocalDate = (date) => {
-    if (!date) return null;
-    return dtFormatter.format(new Date(date)).replace(/\//g, '-').replace(',', '');
-  };
 
   const buildData = {
     definitionId: definition.id,
