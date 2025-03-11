@@ -39,16 +39,28 @@ async function getReleasePipelineRuns(pipelineId) {
   return pipelineRunsRes.json();
 }
 
-async function getMostRecentPipelineRun(pipelineId) {
+async function getMostRecentPipelineRun(pipelineId, environment) {
   const pipelineRuns = await getReleasePipelineRuns(pipelineId);
-  return pipelineRuns.value && pipelineRuns.value.length > 0 ? pipelineRuns.value[0] : null;
+
+  if (!environment) {
+    console.error('Environment not provided');
+    return null;
+  }
+
+  if (pipelineRuns.value && pipelineRuns.value.length > 0) {
+    const environmentRuns = pipelineRuns.value.filter((run) => run.templateParameters.env === environment);
+    const mostRecentRun = environmentRuns.length > 0 ? environmentRuns[0] : null;
+    return mostRecentRun;
+  }
+
+  return null;
 }
 
 export async function getReleasedVersions() {
   const pipelines = await getReleasePipelines();
 
   const releasedVersions = pipelines.map(async (pipeline) => {
-    const mostRecentRun = await getMostRecentPipelineRun(pipeline.id);
+    const mostRecentRun = await getMostRecentPipelineRun(pipeline.id, 'uat');
 
     return {
       pipelineId: pipeline.id,
