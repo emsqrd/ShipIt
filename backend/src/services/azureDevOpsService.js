@@ -1,9 +1,5 @@
 const azureBaseUrl = process.env.AZURE_BASE_URL;
 const releaseDirectory = process.env.BUILD_DEFINITION_FOLDER;
-const ENVIRONMENTS = {
-  INT: 'int',
-  UAT: 'uat',
-};
 
 async function getReleasePipelines() {
   const pipelineUrl = `${azureBaseUrl}/pipelines?api-version=7.1`;
@@ -42,7 +38,7 @@ async function getReleasePipelineRuns(pipelineId) {
   return pipelineRunsRes.json();
 }
 
-async function pipelineRunDetails(pipelineId, runId) {
+async function getPipelineRunDetails(pipelineId, runId) {
   const pipelineRunUrl = `${azureBaseUrl}/pipelines/${pipelineId}/runs/${runId}?api-version=7.1`;
   const pipelineRunRes = await fetch(pipelineRunUrl, {
     headers: {
@@ -85,7 +81,7 @@ async function mostRecentPipelineRun(pipelineId, environment) {
     }
 
     const [mostRecentRun] = environmentRuns;
-    const mostRecentRunDetails = await pipelineRunDetails(pipelineId, mostRecentRun.id);
+    const mostRecentRunDetails = await getPipelineRunDetails(pipelineId, mostRecentRun.id);
 
     if (!mostRecentRunDetails) {
       return null;
@@ -103,7 +99,7 @@ async function mostRecentPipelineRun(pipelineId, environment) {
   }
 }
 
-export async function getReleasedVersions(environment = ENVIRONMENTS.UAT) {
+export async function getReleasedVersions(environment) {
   try {
     const pipelines = await getReleasePipelines();
 
