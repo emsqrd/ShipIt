@@ -1,5 +1,9 @@
 const azureBaseUrl = process.env.AZURE_BASE_URL;
 const releaseDirectory = process.env.BUILD_DEFINITION_FOLDER;
+const ENVIRONMENTS = {
+  INT: 'int',
+  UAT: 'uat',
+};
 
 async function getReleasePipelines() {
   const pipelineUrl = `${azureBaseUrl}/pipelines?api-version=7.1`;
@@ -16,7 +20,6 @@ async function getReleasePipelines() {
 
   const pipelines = await pipelineRes.json();
   const releasePipelines = pipelines.value.filter(
-    // eslint-disable-next-line comma-dangle
     (pipeline) => pipeline.folder.includes(releaseDirectory) && !pipeline.folder.toLowerCase().includes('automated')
   );
 
@@ -100,44 +103,57 @@ async function mostRecentPipelineRun(pipelineId, environment) {
   }
 }
 
-export async function getReleasedVersions() {
+export async function getReleasedVersions(environment = ENVIRONMENTS.UAT) {
   try {
     const pipelines = await getReleasePipelines();
 
     const releasedVersions = await Promise.all(
-      pipelines.map((pipeline) =>
-        mostRecentPipelineRun(pipeline.id, 'uat').then((mostRecentRun) =>
-          mostRecentRun
-            ? {
-                repo: mostRecentRun.repo,
-                pipelineName: pipeline.name,
-                runName: mostRecentRun.name,
-                version: mostRecentRun.version,
-              }
-            : null
-        )
-      )
+      pipelines.map(async (pipeline) => {
+        try {
+          const mostRecentRun = await mostRecentPipelineRun(pipeline.id, environment);
+          if (!mostRecentRun) return null;
+
+          return {
+            repo: mostRecentRun.repo,
+            pipelineName: pipeline.name,
+            runName: mostRecentRun.name,
+            version: mostRecentRun.version,
+          };
+        } catch (error) {
+          console.error(`Error processing pipeline ${pipeline.name}`, error);
+          return null;
+        }
+      })
     );
 
-    return releasedVersions.filter((version) => version !== null);
-    // const releasedVersions = pipelines.map(async (pipeline) => {
-    //   const mostRecentRun = await mostRecentPipelineRun(pipeline.id, 'uat');
-
-    //   if (mostRecentRun) {
-    //     return {
-    //       repo: mostRecentRun.repo,
-    //       pipelineName: pipeline.name,
-    //       runName: mostRecentRun.name,
-    //       version: mostRecentRun.version,
-    //     };
-    //   }
-    // });
-
-    // return Promise.all(releasedVersions);
+    return releasedVersions.filter(Boolean);
   } catch (error) {
     console.error('Error fetching released versions:', error);
     return [];
   }
+  // try {
+  //   const pipelines = await getReleasePipelines();
+
+  //   const releasedVersions = await Promise.all(
+  //     pipelines.map((pipeline) =>
+  //       mostRecentPipelineRun(pipeline.id, 'uat').then((mostRecentRun) =>
+  //         mostRecentRun
+  //           ? {
+  //               repo: mostRecentRun.repo,
+  //               pipelineName: pipeline.name,
+  //               runName: mostRecentRun.name,
+  //               version: mostRecentRun.version,
+  //             }
+  //           : null
+  //       )
+  //     )
+  //   );
+
+  //   return releasedVersions.filter((version) => version !== null);
+  // } catch (error) {
+  //   console.error('Error fetching released versions:', error);
+  //   return [];
+  // }
 }
 
 export default {

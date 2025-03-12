@@ -1,5 +1,5 @@
 import express from 'express';
-import azureDevOpsService from '../services/azureDevOpsService.js';
+import { getReleasedVersions } from '../services/azureDevOpsService.js';
 
 const router = express.Router();
 const azureBaseUrl = process.env.AZURE_BASE_URL;
@@ -24,7 +24,7 @@ const formatLocalDate = (date) => {
 };
 
 router.get('/releasedVersions', async (_, res) => {
-  const releasePipelines = await azureDevOpsService.getReleasedVersions();
+  const releasePipelines = await getReleasedVersions();
 
   res.json(releasePipelines);
 });
