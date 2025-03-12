@@ -39,42 +39,105 @@ async function getReleasePipelineRuns(pipelineId) {
   return pipelineRunsRes.json();
 }
 
-async function getMostRecentPipelineRun(pipelineId, environment) {
-  const pipelineRuns = await getReleasePipelineRuns(pipelineId);
+async function pipelineRunDetails(pipelineId, runId) {
+  const pipelineRunUrl = `${azureBaseUrl}/pipelines/${pipelineId}/runs/${runId}?api-version=7.1`;
+  const pipelineRunRes = await fetch(pipelineRunUrl, {
+    headers: {
+      Authorization: `Basic ${process.env.AZURE_PAT}`,
+    },
+  });
+
+  if (!pipelineRunRes.ok) {
+    console.error('Error fetching pipeline run details:', pipelineRunRes);
+    return null;
+  }
+
+  return pipelineRunRes.json();
+}
+
+async function mostRecentPipelineRun(pipelineId, environment) {
+  if (!pipelineId) {
+    console.error('Pipeline ID not provided');
+    return null;
+  }
 
   if (!environment) {
     console.error('Environment not provided');
     return null;
   }
 
-  if (pipelineRuns.value && pipelineRuns.value.length > 0) {
-    const environmentRuns = pipelineRuns.value.filter((run) => run.templateParameters.env === environment);
-    const mostRecentRun = environmentRuns.length > 0 ? environmentRuns[0] : null;
-    return mostRecentRun;
-  }
+  try {
+    const pipelineRuns = await getReleasePipelineRuns(pipelineId);
 
-  return null;
+    if (!pipelineRuns?.value?.length) {
+      return null;
+    }
+
+    const environmentRuns = pipelineRuns.value
+      .filter((run) => run.templateParameters.env === environment)
+      .sort((a, b) => new Date(b.createdDate) - new Date(a.createdDate));
+
+    if (!environmentRuns.length) {
+      return null;
+    }
+
+    const [mostRecentRun] = environmentRuns;
+    const mostRecentRunDetails = await pipelineRunDetails(pipelineId, mostRecentRun.id);
+
+    if (!mostRecentRunDetails) {
+      return null;
+    }
+
+    return {
+      id: mostRecentRun.id,
+      name: mostRecentRunDetails.name,
+      version: mostRecentRunDetails.resources?.pipelines?.['ci-artifact-pipeline']?.version,
+      repo: mostRecentRunDetails.resources?.pipelines?.['ci-artifact-pipeline']?.pipeline?.name,
+    };
+  } catch (error) {
+    console.error(`Error fetching pipeline run for pipeline ${pipelineId}:`, error);
+    return null;
+  }
 }
 
 export async function getReleasedVersions() {
-  const pipelines = await getReleasePipelines();
+  try {
+    const pipelines = await getReleasePipelines();
 
-  const releasedVersions = pipelines.map(async (pipeline) => {
-    const mostRecentRun = await getMostRecentPipelineRun(pipeline.id, 'uat');
+    const releasedVersions = await Promise.all(
+      pipelines.map((pipeline) =>
+        mostRecentPipelineRun(pipeline.id, 'uat').then((mostRecentRun) =>
+          mostRecentRun
+            ? {
+                repo: mostRecentRun.repo,
+                pipelineName: pipeline.name,
+                runName: mostRecentRun.name,
+                version: mostRecentRun.version,
+              }
+            : null
+        )
+      )
+    );
 
-    return {
-      pipelineId: pipeline.id,
-      pipelineName: pipeline.name,
-      runs: mostRecentRun
-        ? {
-            runId: mostRecentRun.id,
-            runName: mostRecentRun.name,
-          }
-        : null,
-    };
-  });
+    return releasedVersions.filter((version) => version !== null);
+    // const releasedVersions = pipelines.map(async (pipeline) => {
+    //   const mostRecentRun = await mostRecentPipelineRun(pipeline.id, 'uat');
 
-  return Promise.all(releasedVersions);
+    //   if (mostRecentRun) {
+    //     return {
+    //       repo: mostRecentRun.repo,
+    //       pipelineName: pipeline.name,
+    //       runName: mostRecentRun.name,
+    //       version: mostRecentRun.version,
+    //     };
+    //   }
+    // });
+
+    // return Promise.all(releasedVersions);
+  } catch (error) {
+    console.error('Error fetching released versions:', error);
+    return [];
+  }
 }
 
 export default {
