@@ -42,6 +42,23 @@ async function getPipelineRunDetails(pipelineId, runId) {
   return pipelineRunRes.json();
 }
 
+// Batch fetch multiple pipeline run details in parallel
+async function batchGetPipelineRunDetails(runsToFetch) {
+  if (!runsToFetch || !runsToFetch.length) return [];
+
+  return Promise.all(
+    runsToFetch.map(async ({ pipelineId, runId }) => {
+      try {
+        return await getPipelineRunDetails(pipelineId, runId);
+      } catch (error) {
+        console.error(`Error fetching details for pipeline ${pipelineId}, run ${runId}:`, error);
+        return null;
+      }
+    })
+  );
+}
+
+// Optimized version - fetches all runs for one pipeline in a single batch
 async function getReleasePipelineRunsByEnvironment(pipelineId, environment) {
   const pipelineRuns = await getReleasePipelineRuns(pipelineId);
 
@@ -49,13 +66,30 @@ async function getReleasePipelineRunsByEnvironment(pipelineId, environment) {
     return null;
   }
 
-  const environmentRuns = pipelineRuns.value.filter((run) => run.templateParameters.env === environment);
+  return pipelineRuns.value.filter((run) => run.templateParameters.env === environment);
+}
 
-  if (!environmentRuns.length) {
-    return null;
-  }
+// Optimized version - gets all pipeline runs for all pipelines in parallel
+async function getAllPipelineRunsByEnvironment(releasePipelines, environment) {
+  return Promise.all(
+    releasePipelines.map(async (pipeline) => {
+      try {
+        const runs = await getReleasePipelineRunsByEnvironment(pipeline.id, environment);
+        if (!runs || !runs.length) return null;
 
-  return environmentRuns;
+        // Sort runs by date and take the most recent
+        const [mostRecentRun] = runs.sort((a, b) => new Date(b.createdDate) - new Date(a.createdDate));
+
+        return {
+          pipeline,
+          run: mostRecentRun,
+        };
+      } catch (error) {
+        console.error(`Error fetching runs for pipeline ${pipeline.id}:`, error);
+        return null;
+      }
+    })
+  );
 }
 
 async function getMostRecentPipelineRun(pipelineId, environment) {
@@ -99,6 +133,7 @@ async function getMostRecentPipelineRun(pipelineId, environment) {
 
 export async function getReleasedVersions(environment) {
   try {
+    // Get all release pipelines
     const pipelines = await getReleasePipelines();
 
     if (!pipelines?.value?.length) {
@@ -110,24 +145,32 @@ export async function getReleasedVersions(environment) {
       (pipeline) => pipeline.folder.includes(releaseDirectory) && !pipeline.folder.toLowerCase().includes('automated')
     );
 
-    const releasedVersions = await Promise.all(
-      releasePipelines.map(async (pipeline) => {
-        try {
-          const mostRecentRun = await getMostRecentPipelineRun(pipeline.id, environment);
-          if (!mostRecentRun) return null;
+    // Get all pipeline runs in parallel (first level of parallelism)
+    const pipelineRuns = await getAllPipelineRunsByEnvironment(releasePipelines, environment);
+    const validPipelineRuns = pipelineRuns.filter(Boolean);
 
-          return {
-            repo: mostRecentRun.repo,
-            pipelineName: pipeline.name,
-            runName: mostRecentRun.name,
-            version: mostRecentRun.version,
-          };
-        } catch (error) {
-          console.error(`Error processing pipeline ${pipeline.name}`, error);
-          return null;
-        }
-      })
-    );
+    // Prepare batch requests for run details
+    const runsToFetch = validPipelineRuns.map((item) => ({
+      pipelineId: item.pipeline.id,
+      runId: item.run.id,
+      pipeline: item.pipeline,
+    }));
+
+    // Fetch all run details in parallel (second level of parallelism)
+    const runDetailsList = await batchGetPipelineRunDetails(runsToFetch);
+
+    // Map the results into the final format
+    const releasedVersions = runDetailsList.map((details, index) => {
+      if (!details) return null;
+
+      const pipeline = runsToFetch[index].pipeline;
+      return {
+        repo: details.resources?.pipelines?.['ci-artifact-pipeline']?.pipeline?.name,
+        pipelineName: pipeline.name,
+        runName: details.name,
+        version: details.resources?.pipelines?.['ci-artifact-pipeline']?.version,
+      };
+    });
 
     return releasedVersions.filter(Boolean);
   } catch (error) {
