@@ -12,15 +12,10 @@ async function getReleasePipelines() {
 
   if (!pipelineRes.ok) {
     console.error('Error fetching pipelines:', pipelineRes);
-    return [];
+    return null;
   }
 
-  const pipelines = await pipelineRes.json();
-  const releasePipelines = pipelines.value.filter(
-    (pipeline) => pipeline.folder.includes(releaseDirectory) && !pipeline.folder.toLowerCase().includes('automated')
-  );
-
-  return releasePipelines;
+  return await pipelineRes.json();
 }
 
 async function getReleasePipelineRuns(pipelineId) {
@@ -29,7 +24,7 @@ async function getReleasePipelineRuns(pipelineId) {
 
   if (!pipelineRunsRes.ok) {
     console.error('Error fetching pipeline runs:', pipelineRunsRes);
-    return [];
+    return null;
   }
 
   return pipelineRunsRes.json();
@@ -76,10 +71,17 @@ async function getMostRecentPipelineRun(pipelineId, environment) {
 
   try {
     const pipelineRunsByEnvironment = await getReleasePipelineRunsByEnvironment(pipelineId, environment);
+
+    if (!pipelineRunsByEnvironment?.length) {
+      console.error(`No pipeline runs found for pipeline ${pipelineId} and environment ${environment}`);
+      return null;
+    }
+
     const [mostRecentRun] = pipelineRunsByEnvironment.sort((a, b) => new Date(b.createdDate) - new Date(a.createdDate));
     const mostRecentRunDetails = await getPipelineRunDetails(pipelineId, mostRecentRun.id);
 
     if (!mostRecentRunDetails) {
+      console.error(`No details found for pipeline run ${mostRecentRun.id}`);
       return null;
     }
 
@@ -99,8 +101,17 @@ export async function getReleasedVersions(environment) {
   try {
     const pipelines = await getReleasePipelines();
 
+    if (!pipelines?.value?.length) {
+      console.error('No pipelines found');
+      return null;
+    }
+
+    const releasePipelines = pipelines.value.filter(
+      (pipeline) => pipeline.folder.includes(releaseDirectory) && !pipeline.folder.toLowerCase().includes('automated')
+    );
+
     const releasedVersions = await Promise.all(
-      pipelines.map(async (pipeline) => {
+      releasePipelines.map(async (pipeline) => {
         try {
           const mostRecentRun = await getMostRecentPipelineRun(pipeline.id, environment);
           if (!mostRecentRun) return null;
