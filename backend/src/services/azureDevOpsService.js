@@ -92,45 +92,6 @@ async function getAllPipelineRunsByEnvironment(releasePipelines, environment) {
   );
 }
 
-async function getMostRecentPipelineRun(pipelineId, environment) {
-  if (!pipelineId) {
-    console.error('Pipeline ID not provided');
-    return null;
-  }
-
-  if (!environment) {
-    console.error('Environment not provided');
-    return null;
-  }
-
-  try {
-    const pipelineRunsByEnvironment = await getReleasePipelineRunsByEnvironment(pipelineId, environment);
-
-    if (!pipelineRunsByEnvironment?.length) {
-      console.error(`No pipeline runs found for pipeline ${pipelineId} and environment ${environment}`);
-      return null;
-    }
-
-    const [mostRecentRun] = pipelineRunsByEnvironment.sort((a, b) => new Date(b.createdDate) - new Date(a.createdDate));
-    const mostRecentRunDetails = await getPipelineRunDetails(pipelineId, mostRecentRun.id);
-
-    if (!mostRecentRunDetails) {
-      console.error(`No details found for pipeline run ${mostRecentRun.id}`);
-      return null;
-    }
-
-    return {
-      id: mostRecentRun.id,
-      name: mostRecentRunDetails.name,
-      version: mostRecentRunDetails.resources?.pipelines?.['ci-artifact-pipeline']?.version,
-      repo: mostRecentRunDetails.resources?.pipelines?.['ci-artifact-pipeline']?.pipeline?.name,
-    };
-  } catch (error) {
-    console.error(`Error fetching pipeline run for pipeline ${pipelineId}:`, error);
-    return null;
-  }
-}
-
 export async function getReleasedVersions(environment) {
   try {
     // Get all release pipelines
