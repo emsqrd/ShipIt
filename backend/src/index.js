@@ -16,5 +16,5 @@ app.get('/health', (req, res) => {
 app.use('/api/azure', azureDevOpsRouter);
 
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.info(`Server is running on port ${PORT}`);
 });

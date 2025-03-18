@@ -58,7 +58,7 @@ async function batchGetPipelineRunDetails(runsToFetch) {
   );
 }
 
-// Optimized version - fetches all runs for one pipeline in a single batch
+// Fetch all runs for one pipeline in a single batch
 async function getReleasePipelineRunsByEnvironment(pipelineId, environment) {
   const pipelineRuns = await getReleasePipelineRuns(pipelineId);
 
@@ -69,7 +69,7 @@ async function getReleasePipelineRunsByEnvironment(pipelineId, environment) {
   return pipelineRuns.value.filter((run) => run.templateParameters.env === environment);
 }
 
-// Optimized version - gets all pipeline runs for all pipelines in parallel
+// Gets all pipeline runs for all pipelines in parallel
 async function getAllPipelineRunsByEnvironment(releasePipelines, environment) {
   return Promise.all(
     releasePipelines.map(async (pipeline) => {
@@ -94,6 +94,7 @@ async function getAllPipelineRunsByEnvironment(releasePipelines, environment) {
   );
 }
 
+// Get all released versions for a specific environment
 export async function getReleasedVersions(environment) {
   try {
     // Get all release pipelines
