@@ -12,7 +12,6 @@
     "express": "^4.21.2"
   },
   "devDependencies": {
-    "eslint": "^8.57.1",
-    "eslint-plugin-import": "^2.31.0"
+    "prettier": "^3.5.3"
   }
 }

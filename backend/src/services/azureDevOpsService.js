@@ -54,7 +54,7 @@ async function batchGetPipelineRunDetails(runsToFetch) {
         console.error(`Error fetching details for pipeline ${pipelineId}, run ${runId}:`, error);
         return null;
       }
-    })
+    }),
   );
 }
 
@@ -78,7 +78,9 @@ async function getAllPipelineRunsByEnvironment(releasePipelines, environment) {
         if (!runs || !runs.length) return null;
 
         // Sort runs by date and take the most recent
-        const [mostRecentRun] = runs.sort((a, b) => new Date(b.createdDate) - new Date(a.createdDate));
+        const [mostRecentRun] = runs.sort(
+          (a, b) => new Date(b.createdDate) - new Date(a.createdDate),
+        );
 
         return {
           pipeline,
@@ -88,7 +90,7 @@ async function getAllPipelineRunsByEnvironment(releasePipelines, environment) {
         console.error(`Error fetching runs for pipeline ${pipeline.id}:`, error);
         return null;
       }
-    })
+    }),
   );
 }
 
@@ -103,7 +105,9 @@ export async function getReleasedVersions(environment) {
     }
 
     const releasePipelines = pipelines.value.filter(
-      (pipeline) => pipeline.folder.includes(releaseDirectory) && !pipeline.folder.toLowerCase().includes('automated')
+      (pipeline) =>
+        pipeline.folder.includes(releaseDirectory) &&
+        !pipeline.folder.toLowerCase().includes('automated'),
     );
 
     // Get all pipeline runs in parallel (first level of parallelism)
