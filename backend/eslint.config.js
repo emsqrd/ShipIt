@@ -1,9 +1,7 @@
 import pluginJs from '@eslint/js';
-import airbnbBase from 'eslint-config-airbnb-base';
 
 export default [
   pluginJs.configs.recommended,
-  ...airbnbBase,
   {
     languageOptions: {
       ecmaVersion: 'latest',
