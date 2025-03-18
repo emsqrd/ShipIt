@@ -54,11 +54,11 @@ async function batchGetPipelineRunDetails(runsToFetch) {
         console.error(`Error fetching details for pipeline ${pipelineId}, run ${runId}:`, error);
         return null;
       }
-    })
+    }),
   );
 }
 
-// Optimized version - fetches all runs for one pipeline in a single batch
+// Fetch all runs for one pipeline in a single batch
 async function getReleasePipelineRunsByEnvironment(pipelineId, environment) {
   const pipelineRuns = await getReleasePipelineRuns(pipelineId);
 
@@ -69,7 +69,7 @@ async function getReleasePipelineRunsByEnvironment(pipelineId, environment) {
   return pipelineRuns.value.filter((run) => run.templateParameters.env === environment);
 }
 
-// Optimized version - gets all pipeline runs for all pipelines in parallel
+// Gets all pipeline runs for all pipelines in parallel
 async function getAllPipelineRunsByEnvironment(releasePipelines, environment) {
   return Promise.all(
     releasePipelines.map(async (pipeline) => {
@@ -78,7 +78,9 @@ async function getAllPipelineRunsByEnvironment(releasePipelines, environment) {
         if (!runs || !runs.length) return null;
 
         // Sort runs by date and take the most recent
-        const [mostRecentRun] = runs.sort((a, b) => new Date(b.createdDate) - new Date(a.createdDate));
+        const [mostRecentRun] = runs.sort(
+          (a, b) => new Date(b.createdDate) - new Date(a.createdDate),
+        );
 
         return {
           pipeline,
@@ -88,10 +90,11 @@ async function getAllPipelineRunsByEnvironment(releasePipelines, environment) {
         console.error(`Error fetching runs for pipeline ${pipeline.id}:`, error);
         return null;
       }
-    })
+    }),
   );
 }
 
+// Get all released versions for a specific environment
 export async function getReleasedVersions(environment) {
   try {
     // Get all release pipelines
@@ -103,7 +106,9 @@ export async function getReleasedVersions(environment) {
     }
 
     const releasePipelines = pipelines.value.filter(
-      (pipeline) => pipeline.folder.includes(releaseDirectory) && !pipeline.folder.toLowerCase().includes('automated')
+      (pipeline) =>
+        pipeline.folder.includes(releaseDirectory) &&
+        !pipeline.folder.toLowerCase().includes('automated'),
     );
 
     // Get all pipeline runs in parallel (first level of parallelism)
