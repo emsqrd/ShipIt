@@ -1,20 +1,27 @@
-const azureBaseUrl = process.env.AZURE_BASE_URL;
+import HttpMethod from '../contracts/httpMethod';
 
+const azureBaseUrl = process.env.AZURE_BASE_URL;
 const AZURE_API_VERSION = 'api-version=7.1';
-const AZURE_HEADERS = {
-  headers: {
-    Authorization: `Basic ${process.env.AZURE_PAT}`,
-  },
-};
 
 class AzureDevOpsClient {
-  constructor(baseUrl = azureBaseUrl, headers = AZURE_HEADERS) {
+  constructor(baseUrl = azureBaseUrl) {
     this.baseUrl = baseUrl;
-    this.headers = headers;
   }
 
-  async #fetchApi(url) {
-    const response = await fetch(url, this.headers);
+  //TODO: Move this to a base class when implementing JiraClient
+  async #fetchApi(method, url, body = null) {
+    const options = {
+      method,
+      headers: {
+        Authorization: `Basic ${process.env.AZURE_PAT}`,
+      },
+    };
+
+    if (body) {
+      options.body = JSON.stringify(body);
+    }
+
+    const response = await fetch(url, options);
 
     if (!response.ok) {
       const error = new Error(`Azure DevOps API error: ${response.status}`);
@@ -40,15 +47,15 @@ class AzureDevOpsClient {
 
   // API Calling methods
   async getPipelines() {
-    return this.#fetchApi(this.#getPipelinesUrl());
+    return this.#fetchApi(HttpMethod.GET, this.#getPipelinesUrl());
   }
 
   async getPipelineRuns(pipelineId) {
-    return this.#fetchApi(this.#getPipelineRunsUrl(pipelineId));
+    return this.#fetchApi(HttpMethod.GET, this.#getPipelineRunsUrl(pipelineId));
   }
 
   async getPipelineRunDetails(pipelineId, runId) {
-    return this.#fetchApi(this.#getPipelineRunDetailsUrl(pipelineId, runId));
+    return this.#fetchApi(HttpMethod.GET, this.#getPipelineRunDetailsUrl(pipelineId, runId));
   }
 }
 
