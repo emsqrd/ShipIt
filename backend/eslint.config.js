@@ -16,6 +16,13 @@ export default [
       'no-unused-vars': 'warn',
       'no-undef': 'error',
       'no-console': ['warn', { allow: ['error', 'info'] }],
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'AwaitExpression > AwaitExpression.argument',
+          message: 'Double await is not allowed',
+        },
+      ],
     },
   },
 ];

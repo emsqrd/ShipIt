@@ -1,45 +1,63 @@
-const azureBaseUrl = process.env.AZURE_BASE_URL;
+import azureDevOpsClient from '../clients/azureDevOpsClient.js';
+
 const releaseDirectory = process.env.BUILD_DEFINITION_FOLDER;
-const AZURE_HEADERS = {
-  headers: {
-    Authorization: `Basic ${process.env.AZURE_PAT}`,
-  },
-};
 
-async function getReleasePipelines() {
-  const pipelineUrl = `${azureBaseUrl}/pipelines?api-version=7.1`;
-  const pipelineRes = await fetch(pipelineUrl, AZURE_HEADERS);
+// Cache configuration
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
+const cache = new Map();
 
-  if (!pipelineRes.ok) {
-    console.error('Error fetching pipelines:', pipelineRes);
+// Simple cache helper functions
+function getCachedData(key) {
+  const cachedItem = cache.get(key);
+  if (!cachedItem) return null;
+
+  // Check if cache is still valid
+  if (Date.now() > cachedItem.expiresAt) {
+    cache.delete(key);
     return null;
   }
 
-  return await pipelineRes.json();
+  return cachedItem.data;
+}
+
+function setCachedData(key, data, ttl = CACHE_TTL) {
+  cache.set(key, {
+    data,
+    expiresAt: Date.now() + ttl,
+  });
+  return data;
+}
+
+async function getReleasePipelines() {
+  const cacheKey = 'pipelines';
+  const cachedPipelines = getCachedData(cacheKey);
+  if (cachedPipelines) return cachedPipelines;
+
+  try {
+    const result = await azureDevOpsClient.getPipelines();
+    return setCachedData(cacheKey, result);
+  } catch (error) {
+    console.error('Error fetching pipelines:', error);
+    return null;
+  }
 }
 
 async function getReleasePipelineRuns(pipelineId) {
-  const pipelineRunsUrl = `${azureBaseUrl}/pipelines/${pipelineId}/runs?api-version=7.1`;
-  const pipelineRunsRes = await fetch(pipelineRunsUrl, AZURE_HEADERS);
-
-  if (!pipelineRunsRes.ok) {
-    console.error('Error fetching pipeline runs:', pipelineRunsRes);
+  try {
+    return await azureDevOpsClient.getPipelineRuns(pipelineId);
+  } catch (error) {
+    console.error('Error fetching pipeline runs:', error);
     return null;
   }
-
-  return pipelineRunsRes.json();
 }
 
 async function getPipelineRunDetails(pipelineId, runId) {
-  const pipelineRunUrl = `${azureBaseUrl}/pipelines/${pipelineId}/runs/${runId}?api-version=7.1`;
-  const pipelineRunRes = await fetch(pipelineRunUrl, AZURE_HEADERS);
-
-  if (!pipelineRunRes.ok) {
-    console.error('Error fetching pipeline run details:', pipelineRunRes);
+  try {
+    return await azureDevOpsClient.getPipelineRunDetails(pipelineId, runId);
+  } catch (error) {
+    console.error('Error fetching pipeline run details:', error);
     return null;
   }
-
-  return pipelineRunRes.json();
 }
 
 // Batch fetch multiple pipeline run details in parallel
@@ -145,6 +163,22 @@ export async function getReleasedVersions(environment) {
   }
 }
 
+// Utility function to clear the cache (can be exposed if needed)
+export function clearCache(keyPattern = null) {
+  if (keyPattern) {
+    // Clear specific cache entries matching the pattern
+    for (const key of cache.keys()) {
+      if (key.includes(keyPattern)) {
+        cache.delete(key);
+      }
+    }
+  } else {
+    // Clear all cache
+    cache.clear();
+  }
+}
+
 export default {
   getReleasedVersions,
+  clearCache,
 };
