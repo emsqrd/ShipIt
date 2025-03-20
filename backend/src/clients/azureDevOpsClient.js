@@ -1,4 +1,4 @@
-import HttpMethod from '../contracts/httpMethod';
+import HttpMethod from '../contracts/httpMethod.js';
 
 const azureBaseUrl = process.env.AZURE_BASE_URL;
 const AZURE_API_VERSION = 'api-version=7.1';
@@ -14,6 +14,7 @@ class AzureDevOpsClient {
       method,
       headers: {
         Authorization: `Basic ${process.env.AZURE_PAT}`,
+        'Content-Type': 'application/json',
       },
     };
 
