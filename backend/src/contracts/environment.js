@@ -5,4 +5,6 @@ const ENVIRONMENT = {
   UAT: 'uat',
 };
 
+Object.freeze(ENVIRONMENT);
+
 export default ENVIRONMENT;
