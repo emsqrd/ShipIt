@@ -34,7 +34,7 @@ async function getReleasePipelines() {
   if (cachedPipelines) return cachedPipelines;
 
   try {
-    const result = await await azureDevOpsClient.getPipelines();
+    const result = await azureDevOpsClient.getPipelines();
     return setCachedData(cacheKey, result);
   } catch (error) {
     console.error('Error fetching pipelines:', error);
