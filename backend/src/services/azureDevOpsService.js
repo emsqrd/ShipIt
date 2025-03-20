@@ -1,10 +1,6 @@
-const azureBaseUrl = process.env.AZURE_BASE_URL;
+import azureDevOpsClient from '../clients/azureDevOpsClient.js';
+
 const releaseDirectory = process.env.BUILD_DEFINITION_FOLDER;
-const AZURE_HEADERS = {
-  headers: {
-    Authorization: `Basic ${process.env.AZURE_PAT}`,
-  },
-};
 
 // Cache configuration
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
@@ -37,40 +33,31 @@ async function getReleasePipelines() {
   const cachedPipelines = getCachedData(cacheKey);
   if (cachedPipelines) return cachedPipelines;
 
-  const pipelineUrl = `${azureBaseUrl}/pipelines?api-version=7.1`;
-  const pipelineRes = await fetch(pipelineUrl, AZURE_HEADERS);
-
-  if (!pipelineRes.ok) {
-    console.error('Error fetching pipelines:', pipelineRes);
+  try {
+    const result = await await azureDevOpsClient.getPipelines();
+    return setCachedData(cacheKey, result);
+  } catch (error) {
+    console.error('Error fetching pipelines:', error);
     return null;
   }
-
-  const result = await pipelineRes.json();
-  return setCachedData(cacheKey, result);
 }
 
 async function getReleasePipelineRuns(pipelineId) {
-  const pipelineRunsUrl = `${azureBaseUrl}/pipelines/${pipelineId}/runs?api-version=7.1`;
-  const pipelineRunsRes = await fetch(pipelineRunsUrl, AZURE_HEADERS);
-
-  if (!pipelineRunsRes.ok) {
-    console.error('Error fetching pipeline runs:', pipelineRunsRes);
+  try {
+    return await azureDevOpsClient.getPipelineRuns(pipelineId);
+  } catch (error) {
+    console.error('Error fetching pipeline runs:', error);
     return null;
   }
-
-  return pipelineRunsRes.json();
 }
 
 async function getPipelineRunDetails(pipelineId, runId) {
-  const pipelineRunUrl = `${azureBaseUrl}/pipelines/${pipelineId}/runs/${runId}?api-version=7.1`;
-  const pipelineRunRes = await fetch(pipelineRunUrl, AZURE_HEADERS);
-
-  if (!pipelineRunRes.ok) {
-    console.error('Error fetching pipeline run details:', pipelineRunRes);
+  try {
+    return await azureDevOpsClient.getPipelineRunDetails(pipelineId, runId);
+  } catch (error) {
+    console.error('Error fetching pipeline run details:', error);
     return null;
   }
-
-  return pipelineRunRes.json();
 }
 
 // Batch fetch multiple pipeline run details in parallel
