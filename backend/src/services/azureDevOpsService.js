@@ -6,7 +6,37 @@ const AZURE_HEADERS = {
   },
 };
 
+// Cache configuration
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
+const cache = new Map();
+
+// Simple cache helper functions
+function getCachedData(key) {
+  const cachedItem = cache.get(key);
+  if (!cachedItem) return null;
+
+  // Check if cache is still valid
+  if (Date.now() > cachedItem.expiresAt) {
+    cache.delete(key);
+    return null;
+  }
+
+  return cachedItem.data;
+}
+
+function setCachedData(key, data, ttl = CACHE_TTL) {
+  cache.set(key, {
+    data,
+    expiresAt: Date.now() + ttl,
+  });
+  return data;
+}
+
 async function getReleasePipelines() {
+  const cacheKey = 'pipelines';
+  const cachedPipelines = getCachedData(cacheKey);
+  if (cachedPipelines) return cachedPipelines;
+
   const pipelineUrl = `${azureBaseUrl}/pipelines?api-version=7.1`;
   const pipelineRes = await fetch(pipelineUrl, AZURE_HEADERS);
 
@@ -15,7 +45,8 @@ async function getReleasePipelines() {
     return null;
   }
 
-  return await pipelineRes.json();
+  const result = await pipelineRes.json();
+  return setCachedData(cacheKey, result);
 }
 
 async function getReleasePipelineRuns(pipelineId) {
@@ -145,6 +176,22 @@ export async function getReleasedVersions(environment) {
   }
 }
 
+// Utility function to clear the cache (can be exposed if needed)
+export function clearCache(keyPattern = null) {
+  if (keyPattern) {
+    // Clear specific cache entries matching the pattern
+    for (const key of cache.keys()) {
+      if (key.includes(keyPattern)) {
+        cache.delete(key);
+      }
+    }
+  } else {
+    // Clear all cache
+    cache.clear();
+  }
+}
+
 export default {
   getReleasedVersions,
+  clearCache,
 };
