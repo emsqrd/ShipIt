@@ -21,9 +21,13 @@ router.get('/releasedVersions', async (req, res) => {
     });
   }
 
-  const releasePipelines = await getReleasedVersions(environment);
-
-  res.json(releasePipelines);
+  try {
+    const releasePipelines = await getReleasedVersions(environment);
+    res.json(releasePipelines);
+  } catch (error) {
+    console.error('Error fetching released versions:', error);
+    res.json([]);
+  }
 });
 
 export default router;
