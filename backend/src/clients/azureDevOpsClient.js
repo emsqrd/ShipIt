@@ -1,10 +1,10 @@
+import config from '../config/config.js';
 import HttpMethod from '../contracts/httpMethod.js';
 
-const azureBaseUrl = process.env.AZURE_BASE_URL;
 const AZURE_API_VERSION = 'api-version=7.1';
 
-class AzureDevOpsClient {
-  constructor(baseUrl = azureBaseUrl) {
+export class AzureDevOpsClient {
+  constructor(baseUrl = config.azureBaseUrl) {
     this.baseUrl = baseUrl;
   }
 
@@ -13,7 +13,7 @@ class AzureDevOpsClient {
     const options = {
       method,
       headers: {
-        Authorization: `Basic ${process.env.AZURE_PAT}`,
+        Authorization: `Basic ${config.azurePat}`,
         'Content-Type': 'application/json',
       },
     };

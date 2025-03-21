@@ -1,4 +1,5 @@
 import pluginJs from '@eslint/js';
+import globals from 'globals';
 
 export default [
   pluginJs.configs.recommended,
@@ -7,9 +8,10 @@ export default [
       ecmaVersion: 'latest',
       sourceType: 'module',
       globals: {
-        process: 'readonly',
-        fetch: 'readonly',
-        console: 'readonly',
+        ...globals.node,
+        // process: 'readonly',
+        // fetch: 'readonly',
+        // console: 'readonly',
       },
     },
     rules: {
@@ -23,6 +25,14 @@ export default [
           message: 'Double await is not allowed',
         },
       ],
+    },
+  },
+  {
+    files: ['**/*.spec.js'],
+    languageOptions: {
+      globals: {
+        ...globals.jest,
+      },
     },
   },
 ];

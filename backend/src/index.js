@@ -2,10 +2,14 @@
 import './config/env.js';
 
 import express from 'express';
+import config from './config/config.js';
 import azureDevOpsRouter from './routes/azureDevOps.js';
 
+// Validate configuration before starting the server
+config.validate();
+
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = config.port;
 
 app.use(express.json());
 
