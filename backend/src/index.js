@@ -1,8 +1,8 @@
 // Import environment variables first - before any other imports
-import config from './config/config.js';
 import './config/env.js';
 
 import express from 'express';
+import config from './config/config.js';
 import azureDevOpsRouter from './routes/azureDevOps.js';
 
 // Validate configuration before starting the server
