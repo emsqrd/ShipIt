@@ -1,7 +1,18 @@
 import { afterAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
-import azureDevOpsClient from '../../clients/azureDevOpsClient.js';
-import config from '../../config/config.js';
-import { clearCache, getReleasedVersions } from '../azureDevOpsService.js';
+
+// Mock config module
+const mockConfig = {
+  buildDefinitionFolder: 'release',
+  refresh: jest.fn(),
+};
+
+jest.unstable_mockModule('../../config/config.js', () => ({
+  default: mockConfig,
+}));
+
+// Import dependencies after setting up mocks
+const { default: azureDevOpsClient } = await import('../../clients/azureDevOpsClient.js');
+const { clearCache, getReleasedVersions } = await import('../azureDevOpsService.js');
 
 // Mock the azureDevOpsClient methods
 jest
@@ -26,16 +37,13 @@ describe('azureDevOpsService', () => {
     console.error.mockClear();
     clearCache();
 
-    // Set default environment variable for tests and refresh config
-    process.env.BUILD_DEFINITION_FOLDER = 'release';
-    config.refresh();
+    // Reset mock config state
+    mockConfig.buildDefinitionFolder = 'release';
   });
 
   afterAll(() => {
     // Restore console.error
     console.error = originalConsoleError;
-    delete process.env.BUILD_DEFINITION_FOLDER;
-    config.refresh();
   });
 
   describe('getReleasedVersions', () => {

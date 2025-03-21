@@ -3,7 +3,7 @@ import HttpMethod from '../contracts/httpMethod.js';
 
 const AZURE_API_VERSION = 'api-version=7.1';
 
-class AzureDevOpsClient {
+export class AzureDevOpsClient {
   constructor(baseUrl = config.azureBaseUrl) {
     this.baseUrl = baseUrl;
   }
