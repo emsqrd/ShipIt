@@ -1,6 +1,5 @@
 import azureDevOpsClient from '../clients/azureDevOpsClient.js';
-
-const releaseDirectory = process.env.BUILD_DEFINITION_FOLDER;
+import config from '../config/config.js';
 
 // Cache configuration
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
@@ -125,7 +124,7 @@ export async function getReleasedVersions(environment) {
 
     const releasePipelines = pipelines.value.filter(
       (pipeline) =>
-        pipeline.folder.includes(releaseDirectory) &&
+        pipeline.folder.includes(config.buildDefinitionFolder) &&
         !pipeline.folder.toLowerCase().includes('automated'),
     );
 
