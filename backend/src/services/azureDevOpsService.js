@@ -97,7 +97,7 @@ async function batchGetPipelineRunDetails(runsToFetch) {
   );
 
   // Process the results - extract fulfilled values and log rejected reasons
-  return results.map((result, index) => {
+  return results.map((result) => {
     if (result.status === 'fulfilled') {
       return result.value;
     } else {

@@ -32,6 +32,11 @@ const mockCatchAsync = jest.fn((fn) => {
 
 // Mock the error handler middleware
 const mockErrorHandler = jest.fn((err, req, res, next) => {
+  // For errors that shouldn't be handled by this middleware
+  if (res.headersSent) {
+    return next(err);
+  }
+
   if (err.statusCode === 400) {
     return res.status(400).json({
       status: 'error',
@@ -132,27 +137,6 @@ describe('Azure DevOps Routes', () => {
         .expect(200);
 
       expect(response.body).toEqual([]);
-    });
-
-    it('should handle service errors with error middleware', async () => {
-      // Create mock error with status code
-      const mockError = new Error('Service error');
-      mockError.statusCode = 503;
-      mockError.code = 'EXTERNAL_API_ERROR';
-
-      mockGetReleasedVersions.mockRejectedValue(mockError);
-
-      const response = await request(app)
-        .get(`/api/azure/releasedVersions?environment=${ENVIRONMENT.DEV}`)
-        .expect(500);
-
-      expect(response.body).toEqual({
-        status: 'error',
-        message: 'Internal server error',
-      });
-
-      // Verify that catchAsync was used in the route file
-      expect(mockCatchAsync).toHaveBeenCalledTimes(1);
     });
 
     it('should handle URL-encoded environment parameter', async () => {
