@@ -11,8 +11,18 @@ export const errorHandler = (err, req, res, next) => {
     return next(err);
   }
 
-  // Handle custom application errors
-  if (err instanceof AppError) {
+  // Handle custom application errors with instanceof check and fallback to name check
+  if (
+    err instanceof AppError ||
+    (err &&
+      [
+        'AppError',
+        'NotFoundError',
+        'BadRequestError',
+        'ValidationError',
+        'ExternalAPIError',
+      ].includes(err.name))
+  ) {
     return res.status(err.statusCode).json({
       status: 'error',
       message: err.message,
@@ -25,7 +35,6 @@ export const errorHandler = (err, req, res, next) => {
   if (err.name === 'FetchError' || err.response) {
     const statusCode = err.response?.status || 503;
     const message = `External API error: ${err.message}`;
-
     return res.status(statusCode).json({
       status: 'error',
       message,
@@ -39,7 +48,6 @@ export const errorHandler = (err, req, res, next) => {
     process.env.NODE_ENV === 'production'
       ? 'Internal server error'
       : err.message || 'Something went wrong';
-
   return res.status(statusCode).json({
     status: 'error',
     message,

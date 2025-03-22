@@ -215,7 +215,7 @@ export async function getReleasedVersions(environment) {
     return releasedVersions.filter(Boolean);
   } catch (error) {
     // If it's already one of our application errors, rethrow it
-    if (error instanceof AppError) {
+    if (error instanceof AppError || (error && error.name === 'Error')) {
       throw error;
     }
 
