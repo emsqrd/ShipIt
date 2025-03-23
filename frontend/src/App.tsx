@@ -1,35 +1,55 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import './App.css';
 
 function App() {
-  const [count, setCount] = useState(0)
+  const releasedVersions = [
+    {
+      id: 1,
+      repo: 'address_svc',
+      pipelineName: 'address_svc-CD',
+      runName: 'uat_20250222-1',
+      version: '20250128.1',
+    },
+    {
+      id: 2,
+      repo: 'admin-svc',
+      pipelineName: 'admin-svc-CD',
+      runName: 'uat_20250228-1',
+      version: '20250228.1',
+    },
+    {
+      id: 3,
+      repo: 'billing-svc',
+      pipelineName: 'billing-svc-CD',
+      runName: 'uat_20250301-2',
+      version: '20250301.2',
+    },
+  ];
 
   return (
     <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+      <div className="version-container">
+        <h2 className="version-header">Released Versions</h2>
+
+        <div className="version-list-header">
+          <span className="repo-column">Repo</span>
+          <span className="pipeline-column">Pipeline Name</span>
+          <span className="run-column">Run Name</span>
+          <span className="version-column">Version</span>
+        </div>
+
+        <ul className="version-list">
+          {releasedVersions.map((item) => (
+            <li key={item.id} className="version-item">
+              <span className="repo-column">{item.repo}</span>
+              <span className="pipeline-column">{item.pipelineName}</span>
+              <span className="run-column">{item.runName}</span>
+              <span className="version-column">{item.version}</span>
+            </li>
+          ))}
+        </ul>
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
     </>
-  )
+  );
 }
 
-export default App
+export default App;
