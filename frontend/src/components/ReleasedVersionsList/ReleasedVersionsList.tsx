@@ -1,7 +1,9 @@
+import type { ReleasedVersion } from '../../contracts/ReleasedVersion';
+import ReleasedVersionItem from '../ReleasedVersionItem/ReleasedVersionItem';
 import styles from './ReleasedVersionsList.module.css';
 
 function ReleasedVersionsList() {
-  const releasedVersions = [
+  const releasedVersions: ReleasedVersion[] = [
     {
       id: 1,
       repo: 'address_svc',
@@ -36,12 +38,7 @@ function ReleasedVersionsList() {
 
       <ul className={styles['version-list']}>
         {releasedVersions.map((item) => (
-          <li key={item.id} className={styles['version-item']}>
-            <span className={styles['repo-column']}>{item.repo}</span>
-            <span className={styles['pipeline-column']}>{item.pipelineName}</span>
-            <span className={styles['run-column']}>{item.runName}</span>
-            <span className={styles['version-column']}>{item.version}</span>
-          </li>
+          <ReleasedVersionItem key={item.id} {...item} />
         ))}
       </ul>
     </>
