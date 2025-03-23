@@ -9,5 +9,12 @@ export default {
     '^(\\.{1,2}/.*)\\.js$': '$1',
   },
   // Collect coverage data from your source files
-  collectCoverageFrom: ['src/**/*.js', '!src/**/__tests__/**'],
+  collectCoverageFrom: [
+    'src/**/*.js',
+    '!src/**/__tests__/**',
+    '!src/index.js',
+    '!src/config/env.js',
+    '!src/app.js',
+    '!src/config/config.js',
+  ],
 };
