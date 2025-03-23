@@ -1,6 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import HttpMethod from '../../contracts/httpMethod.js';
 
+// Mock ExternalAPIError class
+const mockExternalAPIError = jest.fn();
+jest.unstable_mockModule('../../utils/errors.js', () => ({
+  ExternalAPIError: mockExternalAPIError,
+}));
+
 // Mock global fetch
 global.fetch = jest.fn();
 
@@ -23,6 +29,15 @@ describe('AzureDevOpsClient', () => {
   beforeEach(() => {
     client = new AzureDevOpsClient();
     jest.clearAllMocks();
+
+    // Setup ExternalAPIError mock implementation
+    mockExternalAPIError.mockImplementation((message, statusCode, code, originalError) => {
+      const error = new Error(message);
+      error.statusCode = statusCode;
+      error.code = code;
+      error.originalError = originalError;
+      return error;
+    });
   });
 
   afterEach(() => {
@@ -118,37 +133,37 @@ describe('AzureDevOpsClient', () => {
     });
 
     describe('error handling', () => {
-      it('should throw error with status code when response is not ok', async () => {
+      it('should throw ExternalAPIError when response is not ok', async () => {
         const errorStatus = 404;
+        const errorText = 'Not Found';
+
         global.fetch.mockResolvedValue({
           ok: false,
           status: errorStatus,
+          statusText: errorText,
+          text: () => Promise.resolve('Resource not found'),
         });
 
-        await expect(client.getPipelines()).rejects.toThrow(
-          `Azure DevOps API error: ${errorStatus}`,
+        await expect(client.getPipelines()).rejects.toThrow();
+        expect(mockExternalAPIError).toHaveBeenCalledWith(
+          expect.stringContaining(`Azure DevOps API error: ${errorStatus}`),
+          errorStatus,
+          'AZURE_API_ERROR',
+          expect.any(Object),
         );
       });
 
-      it('should attach response to error object', async () => {
-        const mockResponse = {
-          ok: false,
-          status: 500,
-        };
-        global.fetch.mockResolvedValue(mockResponse);
-
-        try {
-          await client.getPipelines();
-        } catch (error) {
-          expect(error.response).toBe(mockResponse);
-        }
-      });
-
-      it('should propagate network errors', async () => {
+      it('should handle network errors with ExternalAPIError', async () => {
         const networkError = new Error('Network error');
         global.fetch.mockRejectedValue(networkError);
 
-        await expect(client.getPipelines()).rejects.toThrow(networkError);
+        await expect(client.getPipelines()).rejects.toThrow();
+        expect(mockExternalAPIError).toHaveBeenCalledWith(
+          expect.stringContaining('Azure DevOps API request failed'),
+          503,
+          'AZURE_CONNECTION_ERROR',
+          networkError,
+        );
       });
     });
   });

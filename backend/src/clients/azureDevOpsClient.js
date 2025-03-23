@@ -1,5 +1,6 @@
 import config from '../config/config.js';
 import HttpMethod from '../contracts/httpMethod.js';
+import { ExternalAPIError } from '../utils/errors.js';
 
 const AZURE_API_VERSION = 'api-version=7.1';
 
@@ -22,15 +23,34 @@ export class AzureDevOpsClient {
       options.body = JSON.stringify(body);
     }
 
-    const response = await fetch(url, options);
+    try {
+      const response = await fetch(url, options);
 
-    if (!response.ok) {
-      const error = new Error(`Azure DevOps API error: ${response.status}`);
-      error.response = response;
-      throw error;
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => 'No error details available');
+        throw new ExternalAPIError(
+          `Azure DevOps API error: ${response.status} - ${errorText}`,
+          response.status,
+          'AZURE_API_ERROR',
+          { url, status: response.status, statusText: response.statusText },
+        );
+      }
+
+      return response.json();
+    } catch (error) {
+      // If this is already our custom error, rethrow it
+      if (error instanceof ExternalAPIError) {
+        throw error;
+      }
+
+      // If it's a network error or other fetch related error
+      throw new ExternalAPIError(
+        `Azure DevOps API request failed: ${error.message}`,
+        503,
+        'AZURE_CONNECTION_ERROR',
+        error,
+      );
     }
-
-    return response.json();
   }
 
   // API URL methods

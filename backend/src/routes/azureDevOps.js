@@ -1,33 +1,34 @@
 import express from 'express';
+
 import ENVIRONMENT from '../contracts/environment.js';
+import { catchAsync } from '../middleware/errorHandler.js';
 import { getReleasedVersions } from '../services/azureDevOpsService.js';
+import { ValidationError } from '../utils/errors.js';
 
 const router = express.Router();
 
-router.get('/releasedVersions', async (req, res) => {
-  const { environment } = req.query;
+router.get(
+  '/releasedVersions',
+  catchAsync(async (req, res) => {
+    const { environment } = req.query;
 
-  // Check if environment parameter is provided
-  if (!environment) {
-    return res.status(400).json({
-      error: 'Environment parameter is required',
-    });
-  }
+    // Check if environment parameter is provided
+    if (!environment) {
+      throw new ValidationError('Environment parameter is required');
+    }
 
-  // Validate the environment value
-  if (!Object.values(ENVIRONMENT).includes(environment)) {
-    return res.status(400).json({
-      error: `Invalid environment. Must be one of: ${Object.values(ENVIRONMENT).join(', ')}`,
-    });
-  }
+    // Validate the environment value
+    if (!Object.values(ENVIRONMENT).includes(environment)) {
+      throw new ValidationError(
+        `Invalid environment. Must be one of: ${Object.values(ENVIRONMENT).join(', ')}`,
+      );
+    }
 
-  try {
     const releasePipelines = await getReleasedVersions(environment);
-    res.json(releasePipelines);
-  } catch (error) {
-    console.error('Error fetching released versions:', error);
-    res.json([]);
-  }
-});
+
+    // Send response - empty array is a valid response, not an error
+    res.json(releasePipelines || []);
+  }),
+);
 
 export default router;

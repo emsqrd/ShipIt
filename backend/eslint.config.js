@@ -9,9 +9,6 @@ export default [
       sourceType: 'module',
       globals: {
         ...globals.node,
-        // process: 'readonly',
-        // fetch: 'readonly',
-        // console: 'readonly',
       },
     },
     rules: {

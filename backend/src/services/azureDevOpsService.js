@@ -1,5 +1,6 @@
 import azureDevOpsClient from '../clients/azureDevOpsClient.js';
 import config from '../config/config.js';
+import { AppError, ExternalAPIError, NotFoundError } from '../utils/errors.js';
 
 // Cache configuration
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
@@ -37,7 +38,12 @@ async function getReleasePipelines() {
     return setCachedData(cacheKey, result);
   } catch (error) {
     console.error('Error fetching pipelines:', error);
-    return null;
+    throw new ExternalAPIError(
+      `Failed to fetch release pipelines: ${error.message}`,
+      error.statusCode || 503,
+      'AZURE_PIPELINE_FETCH_ERROR',
+      error,
+    );
   }
 }
 
@@ -45,8 +51,13 @@ async function getReleasePipelineRuns(pipelineId) {
   try {
     return await azureDevOpsClient.getPipelineRuns(pipelineId);
   } catch (error) {
-    console.error('Error fetching pipeline runs:', error);
-    return null;
+    console.error(`Error fetching pipeline runs for pipeline ${pipelineId}:`, error);
+    throw new ExternalAPIError(
+      `Failed to fetch pipeline runs for pipeline ${pipelineId}: ${error.message}`,
+      error.statusCode || 503,
+      'AZURE_PIPELINE_RUNS_FETCH_ERROR',
+      error,
+    );
   }
 }
 
@@ -54,8 +65,13 @@ async function getPipelineRunDetails(pipelineId, runId) {
   try {
     return await azureDevOpsClient.getPipelineRunDetails(pipelineId, runId);
   } catch (error) {
-    console.error('Error fetching pipeline run details:', error);
-    return null;
+    console.error(`Error fetching details for pipeline ${pipelineId}, run ${runId}:`, error);
+    throw new ExternalAPIError(
+      `Failed to fetch pipeline run details for pipeline ${pipelineId}, run ${runId}: ${error.message}`,
+      error.statusCode || 503,
+      'AZURE_PIPELINE_RUN_DETAILS_ERROR',
+      error,
+    );
   }
 }
 
@@ -63,16 +79,33 @@ async function getPipelineRunDetails(pipelineId, runId) {
 async function batchGetPipelineRunDetails(runsToFetch) {
   if (!runsToFetch || !runsToFetch.length) return [];
 
-  return Promise.all(
+  const results = await Promise.allSettled(
     runsToFetch.map(async ({ pipelineId, runId }) => {
       try {
         return await getPipelineRunDetails(pipelineId, runId);
       } catch (error) {
         console.error(`Error fetching details for pipeline ${pipelineId}, run ${runId}:`, error);
-        return null;
+        // Re-throw with pipeline context for Promise.allSettled
+        throw new ExternalAPIError(
+          `Failed to fetch details for pipeline ${pipelineId}, run ${runId}: ${error.message}`,
+          error.statusCode || 503,
+          'AZURE_BATCH_PIPELINE_DETAILS_ERROR',
+          error,
+        );
       }
     }),
   );
+
+  // Process the results - extract fulfilled values and log rejected reasons
+  return results.map((result) => {
+    if (result.status === 'fulfilled') {
+      return result.value;
+    } else {
+      // Log the rejection but return null so other results can be processed
+      console.error(`Failed to fetch pipeline details: ${result.reason}`);
+      return null;
+    }
+  });
 }
 
 // Fetch all runs for one pipeline in a single batch
@@ -80,7 +113,7 @@ async function getReleasePipelineRunsByEnvironment(pipelineId, environment) {
   const pipelineRuns = await getReleasePipelineRuns(pipelineId);
 
   if (!pipelineRuns?.value?.length) {
-    return null;
+    return [];
   }
 
   return pipelineRuns.value.filter((run) => run.templateParameters.env === environment);
@@ -88,7 +121,7 @@ async function getReleasePipelineRunsByEnvironment(pipelineId, environment) {
 
 // Gets all pipeline runs for all pipelines in parallel
 async function getAllPipelineRunsByEnvironment(releasePipelines, environment) {
-  return Promise.all(
+  const results = await Promise.allSettled(
     releasePipelines.map(async (pipeline) => {
       try {
         const runs = await getReleasePipelineRunsByEnvironment(pipeline.id, environment);
@@ -105,10 +138,28 @@ async function getAllPipelineRunsByEnvironment(releasePipelines, environment) {
         };
       } catch (error) {
         console.error(`Error fetching runs for pipeline ${pipeline.id}:`, error);
-        return null;
+        // Re-throw for Promise.allSettled
+        throw new ExternalAPIError(
+          `Failed to fetch runs for pipeline ${pipeline.id}: ${error.message}`,
+          error.statusCode || 503,
+          'AZURE_ENVIRONMENT_RUNS_ERROR',
+          error,
+        );
       }
     }),
   );
+
+  // Filter out rejected promises but log them
+  return results
+    .map((result, index) => {
+      if (result.status === 'fulfilled') {
+        return result.value;
+      } else {
+        console.error(`Pipeline run fetch failed: ${result.reason}`);
+        return null;
+      }
+    })
+    .filter(Boolean); // Filter out nulls
 }
 
 // Get all released versions for a specific environment
@@ -118,8 +169,7 @@ export async function getReleasedVersions(environment) {
     const pipelines = await getReleasePipelines();
 
     if (!pipelines?.value?.length) {
-      console.error('No pipelines found');
-      return null;
+      throw new NotFoundError('No pipelines found');
     }
 
     const releasePipelines = pipelines.value.filter(
@@ -128,9 +178,16 @@ export async function getReleasedVersions(environment) {
         !pipeline.folder.toLowerCase().includes('automated'),
     );
 
+    if (releasePipelines.length === 0) {
+      throw new NotFoundError('No release pipelines found matching the criteria');
+    }
+
     // Get all pipeline runs in parallel (first level of parallelism)
-    const pipelineRuns = await getAllPipelineRunsByEnvironment(releasePipelines, environment);
-    const validPipelineRuns = pipelineRuns.filter(Boolean);
+    const validPipelineRuns = await getAllPipelineRunsByEnvironment(releasePipelines, environment);
+
+    if (!validPipelineRuns.length) {
+      return []; // Empty result but not an error
+    }
 
     // Prepare batch requests for run details
     const runsToFetch = validPipelineRuns.map((item) => ({
@@ -157,8 +214,19 @@ export async function getReleasedVersions(environment) {
 
     return releasedVersions.filter(Boolean);
   } catch (error) {
+    // If it's already one of our application errors, rethrow it
+    if (error instanceof AppError || (error && error.name === 'Error')) {
+      throw error;
+    }
+
+    // Otherwise, wrap in a general error
     console.error('Error fetching released versions:', error);
-    return [];
+    throw new ExternalAPIError(
+      `Failed to fetch released versions for environment ${environment}: ${error.message}`,
+      error.statusCode || 503,
+      'AZURE_RELEASED_VERSIONS_ERROR',
+      error,
+    );
   }
 }
 
