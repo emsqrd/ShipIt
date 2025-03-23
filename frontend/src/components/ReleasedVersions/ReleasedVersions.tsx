@@ -1,3 +1,5 @@
+import styles from './ReleasedVersions.module.css';
+
 function ReleasedVersions() {
   const releasedVersions = [
     {
@@ -24,23 +26,23 @@ function ReleasedVersions() {
   ];
 
   return (
-    <div className="version-container">
-      <h2 className="version-header">Released Versions</h2>
+    <div className={styles['version-container']}>
+      <h2 className={styles['version-header']}>Released Versions</h2>
 
-      <div className="version-list-header">
-        <span className="repo-column">Repo</span>
-        <span className="pipeline-column">Pipeline Name</span>
-        <span className="run-column">Run Name</span>
-        <span className="version-column">Version</span>
+      <div className={styles['version-list-header']}>
+        <span className={styles['repo-column']}>Repo</span>
+        <span className={styles['pipeline-column']}>Pipeline Name</span>
+        <span className={styles['run-column']}>Run Name</span>
+        <span className={styles['version-column']}>Version</span>
       </div>
 
-      <ul className="version-list">
+      <ul className={styles['version-list']}>
         {releasedVersions.map((item) => (
-          <li key={item.id} className="version-item">
-            <span className="repo-column">{item.repo}</span>
-            <span className="pipeline-column">{item.pipelineName}</span>
-            <span className="run-column">{item.runName}</span>
-            <span className="version-column">{item.version}</span>
+          <li key={item.id} className={styles['version-item']}>
+            <span className={styles['repo-column']}>{item.repo}</span>
+            <span className={styles['pipeline-column']}>{item.pipelineName}</span>
+            <span className={styles['run-column']}>{item.runName}</span>
+            <span className={styles['version-column']}>{item.version}</span>
           </li>
         ))}
       </ul>
