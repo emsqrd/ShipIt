@@ -1,15 +1,28 @@
-import type { ReleasedVersion as ReleasedVersionItem } from '../../contracts/ReleasedVersion';
+import type { ReleasedVersion } from '../../contracts/ReleasedVersion';
 import styles from './ReleasedVersionItem.module.css';
 
-function ReleasedVersionItem(releasedVersion: ReleasedVersionItem) {
+const ReleasedVersionItem: React.FC<ReleasedVersion> = ({
+  repo,
+  pipelineName,
+  runName,
+  version,
+}) => {
   return (
-    <li className={styles['version-item']}>
-      <span className={styles['repo-column']}>{releasedVersion.repo}</span>
-      <span className={styles['pipeline-column']}>{releasedVersion.pipelineName}</span>
-      <span className={styles['run-column']}>{releasedVersion.runName}</span>
-      <span className={styles['version-column']}>{releasedVersion.version}</span>
-    </li>
+    <div role="row" className={styles['version-item']}>
+      <span role="cell" className={styles['repo-column']}>
+        {repo}
+      </span>
+      <span role="cell" className={styles['pipeline-column']}>
+        {pipelineName}
+      </span>
+      <span role="cell" className={styles['run-column']}>
+        {runName}
+      </span>
+      <span role="cell" className={styles['version-column']}>
+        {version}
+      </span>
+    </div>
   );
-}
+};
 
 export default ReleasedVersionItem;

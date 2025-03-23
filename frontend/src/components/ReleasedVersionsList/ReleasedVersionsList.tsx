@@ -2,7 +2,7 @@ import type { ReleasedVersion } from '../../contracts/ReleasedVersion';
 import ReleasedVersionItem from '../ReleasedVersionItem/ReleasedVersionItem';
 import styles from './ReleasedVersionsList.module.css';
 
-function ReleasedVersionsList() {
+const ReleasedVersionsList: React.FC = () => {
   const releasedVersions: ReleasedVersion[] = [
     {
       id: 1,
@@ -27,22 +27,54 @@ function ReleasedVersionsList() {
     },
   ];
 
+  const noReleaseVersionsDisplay = (
+    <div role="rowgroup" className={styles['no-version-list']}>
+      <div role="row" className={styles['no-version-item']}>
+        <span role="cell" className={styles['no-version-text']}>
+          No released versions available.
+        </span>
+      </div>
+    </div>
+  );
+
+  const releaseVersionList = (
+    <div role="rowgroup" className={styles['version-list']}>
+      {releasedVersions.map((item) => (
+        <ReleasedVersionItem key={item.id} {...item} />
+      ))}
+    </div>
+  );
+
+  let releasedVersionContent;
+
+  if (releasedVersions.length > 0) {
+    releasedVersionContent = releaseVersionList;
+  } else {
+    releasedVersionContent = noReleaseVersionsDisplay;
+  }
+
   return (
-    <>
-      <div className={styles['version-list-header']}>
-        <span className={styles['repo-column']}>Repo</span>
-        <span className={styles['pipeline-column']}>Pipeline Name</span>
-        <span className={styles['run-column']}>Run Name</span>
-        <span className={styles['version-column']}>Version</span>
+    <div role="table" aria-label="Released Versions" className={styles['version-table']}>
+      <div role="rowgroup">
+        <div role="row" className={styles['version-list-header']}>
+          <span role="columnheader" className={styles['repo-column']}>
+            Repo
+          </span>
+          <span role="columnheader" className={styles['pipeline-column']}>
+            Pipeline Name
+          </span>
+          <span role="columnheader" className={styles['run-column']}>
+            Run Name
+          </span>
+          <span role="columnheader" className={styles['version-column']}>
+            Version
+          </span>
+        </div>
       </div>
 
-      <ul className={styles['version-list']}>
-        {releasedVersions.map((item) => (
-          <ReleasedVersionItem key={item.id} {...item} />
-        ))}
-      </ul>
-    </>
+      {releasedVersionContent}
+    </div>
   );
-}
+};
 
 export default ReleasedVersionsList;
