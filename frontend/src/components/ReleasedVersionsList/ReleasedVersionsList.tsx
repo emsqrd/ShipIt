@@ -1,31 +1,45 @@
+import React, { useEffect } from 'react';
+
 import type { ReleasedVersion } from '../../contracts/ReleasedVersion';
+import { fetchReleasedVersions } from '../../services/releasedVersionsService';
 import ReleasedVersionItem from '../ReleasedVersionItem/ReleasedVersionItem';
 import styles from './ReleasedVersionsList.module.css';
 
 const ReleasedVersionsList: React.FC = () => {
-  const releasedVersions: ReleasedVersion[] = [
-    {
-      id: 1,
-      repo: 'address_svc',
-      pipelineName: 'address_svc-CD',
-      runName: 'uat_20250222-1',
-      version: '20250128.1',
-    },
-    {
-      id: 2,
-      repo: 'admin-svc',
-      pipelineName: 'admin-svc-CD',
-      runName: 'uat_20250228-1',
-      version: '20250228.1',
-    },
-    {
-      id: 3,
-      repo: 'billing-svc',
-      pipelineName: 'billing-svc-CD',
-      runName: 'uat_20250301-2',
-      version: '20250301.2',
-    },
-  ];
+  // const releasedVersions: ReleasedVersion[] = [
+  //   {
+  //     id: 1,
+  //     repo: 'address_svc',
+  //     pipelineName: 'address_svc-CD',
+  //     runName: 'uat_20250222-1',
+  //     version: '20250128.1',
+  //   },
+  //   {
+  //     id: 2,
+  //     repo: 'admin-svc',
+  //     pipelineName: 'admin-svc-CD',
+  //     runName: 'uat_20250228-1',
+  //     version: '20250228.1',
+  //   },
+  //   {
+  //     id: 3,
+  //     repo: 'billing-svc',
+  //     pipelineName: 'billing-svc-CD',
+  //     runName: 'uat_20250301-2',
+  //     version: '20250301.2',
+  //   },
+  // ];
+
+  const [releasedVersions, setReleasedVersions] = React.useState<ReleasedVersion[]>([]);
+
+  useEffect(() => {
+    const loadReleasedVersions = async () => {
+      const data = await fetchReleasedVersions('uat');
+      setReleasedVersions(data);
+    };
+
+    loadReleasedVersions();
+  }, []);
 
   const noReleaseVersionsDisplay = (
     <div role="rowgroup" className={styles['no-version-list']}>
