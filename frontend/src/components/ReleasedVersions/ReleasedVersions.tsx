@@ -4,7 +4,12 @@ import styles from './ReleasedVersions.module.css';
 const ReleasedVersions: React.FC = () => {
   return (
     <div className={styles['version-container']}>
-      <h2 className={styles['version-header']}>Released Versions</h2>
+      <header className={styles['version-header-container']}>
+        <h1 className={styles['version-header']}>Released Versions</h1>
+        <p className={styles['version-description']}>
+          Track all version releases across repositories
+        </p>
+      </header>
       <ReleasedVersionsList />
     </div>
   );
