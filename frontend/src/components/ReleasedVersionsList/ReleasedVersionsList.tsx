@@ -31,7 +31,12 @@ const ReleasedVersionsList: React.FC = () => {
   const loadingSkeletonRows = Array(3)
     .fill(0)
     .map((_, index) => (
-      <div role="row" className={styles['version-item-skeleton']} key={`skeleton-${index}`}>
+      <div
+        data-testid="skeleton-loader"
+        role="row"
+        className={styles['version-item-skeleton']}
+        key={`skeleton-${index}`}
+      >
         <div className={styles['skeleton-cell']}></div>
         <div className={styles['skeleton-cell']}></div>
         <div className={styles['skeleton-cell']}></div>
@@ -50,7 +55,11 @@ const ReleasedVersionsList: React.FC = () => {
 
     if (error) {
       return (
-        <div role="rowgroup" className={styles['error-container']}>
+        <div
+          data-testid="release-versions-error-message"
+          role="rowgroup"
+          className={styles['error-container']}
+        >
           <div role="row" className={styles['error-message']}>
             <span role="cell">
               <span className={styles['error-icon']}>⚠️</span>
@@ -63,9 +72,13 @@ const ReleasedVersionsList: React.FC = () => {
 
     if (releasedVersions.length === 0) {
       return (
-        <div role="rowgroup" className={styles['no-version-list']}>
-          <div role="row" className={styles['no-version-item']}>
-            <span role="cell" className={styles['no-version-text']}>
+        <div data-testid="no-versions-list" role="rowgroup" className={styles['no-version-list']}>
+          <div data-testid="no-versions-list-row" role="row" className={styles['no-version-item']}>
+            <span
+              data-testid="no-versions-list-message"
+              role="cell"
+              className={styles['no-version-text']}
+            >
               <span className={styles['empty-icon']}>📦</span>
               No released versions available
             </span>
@@ -85,7 +98,12 @@ const ReleasedVersionsList: React.FC = () => {
 
   return (
     <div className={styles['container']}>
-      <div role="table" aria-label="Released Versions" className={styles['version-table']}>
+      <div
+        data-testid="released-versions-table"
+        role="table"
+        aria-label="Released Versions"
+        className={styles['version-table']}
+      >
         <div role="rowgroup">
           <div role="row" className={styles['version-list-header']}>
             <span role="columnheader" className={styles['repo-column']}>
