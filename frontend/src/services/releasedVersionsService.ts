@@ -5,7 +5,7 @@ const API_BASE_URL = 'http://localhost:3000/api';
 export const fetchReleasedVersions = async (environment: string): Promise<ReleasedVersion[]> => {
   try {
     const response = await fetch(
-      `${API_BASE_URL}/azure/releasedVersions?environment=${environment}`,
+      `${API_BASE_URL}/azure/releasedVersions?environment=${encodeURIComponent(environment)}`,
     );
 
     if (!response.ok) {

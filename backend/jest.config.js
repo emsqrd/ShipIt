@@ -16,5 +16,6 @@ export default {
     '!src/config/env.js',
     '!src/app.js',
     '!src/config/config.js',
+    '!src/contracts/**',
   ],
 };
