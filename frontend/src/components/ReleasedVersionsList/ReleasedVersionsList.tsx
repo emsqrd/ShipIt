@@ -14,7 +14,7 @@ const ReleasedVersionsList: React.FC = () => {
     const loadReleasedVersions = async () => {
       try {
         setIsLoading(true);
-        const data = await fetchReleasedVersions('uat');
+        const data = await fetchReleasedVersions('perf1');
         setReleasedVersions(data);
         setError(null);
       } catch (_) {
