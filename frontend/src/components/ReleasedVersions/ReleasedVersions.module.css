@@ -1,0 +1,40 @@
+.version-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 20px;
+  background-color: #242424;
+  min-height: 100vh;
+}
+
+.version-header-container {
+  margin-bottom: 32px;
+}
+
+.version-header {
+  margin: 0 0 8px 0;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #e2e8f0;
+  letter-spacing: -0.5px;
+}
+
+.version-description {
+  color: #a0aec0;
+  font-size: 1.1rem;
+  margin: 0;
+  font-weight: 400;
+}
+
+@media (max-width: 768px) {
+  .version-container {
+    padding: 24px 16px;
+  }
+
+  .version-header {
+    font-size: 1.75rem;
+  }
+
+  .version-description {
+    font-size: 1rem;
+  }
+}
