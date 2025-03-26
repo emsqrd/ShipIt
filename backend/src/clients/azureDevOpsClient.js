@@ -1,5 +1,5 @@
 import config from '../config/config.js';
-import HttpMethod from '../contracts/httpMethod.js';
+import { HttpMethod } from '../contracts/httpMethod.js';
 import { ExternalAPIError } from '../utils/errors.js';
 
 const AZURE_API_VERSION = 'api-version=7.1';
