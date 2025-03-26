@@ -1,10 +1,16 @@
 // Custom error classes for the application
+import { ErrorCode } from '../types/ErrorCode.js';
+import { HttpStatusCode } from '../types/HttpStatusCode.js';
 
 /**
  * Base Application Error class
  */
 export class AppError extends Error {
-  constructor(message, statusCode = 500, code = 'INTERNAL_ERROR') {
+  constructor(
+    message: string | undefined,
+    public statusCode = HttpStatusCode.INTERNAL_SERVER_ERROR,
+    public code = ErrorCode.INTERNAL_ERROR,
+  ) {
     super(message);
     this.statusCode = statusCode;
     this.code = code;
@@ -17,8 +23,8 @@ export class AppError extends Error {
  * Bad Request Error (400)
  */
 export class BadRequestError extends AppError {
-  constructor(message = 'Bad request', code = 'BAD_REQUEST') {
-    super(message, 400, code);
+  constructor(message = 'Bad request') {
+    super(message, HttpStatusCode.BAD_REQUEST, ErrorCode.BAD_REQUEST);
   }
 }
 
@@ -26,17 +32,17 @@ export class BadRequestError extends AppError {
  * Not Found Error (404)
  */
 export class NotFoundError extends AppError {
-  constructor(message = 'Resource not found', code = 'NOT_FOUND') {
-    super(message, 404, code);
+  constructor(message = 'Resource not found') {
+    super(message, HttpStatusCode.NOT_FOUND, ErrorCode.NOT_FOUND);
   }
 }
 
 /**
  * Validation Error (400)
  */
-export class ValidationError extends BadRequestError {
-  constructor(message = 'Validation failed', code = 'VALIDATION_ERROR') {
-    super(message, code);
+export class RequestValidationError extends BadRequestError {
+  constructor(message = 'Validation failed') {
+    super(message);
   }
 }
 
@@ -46,9 +52,9 @@ export class ValidationError extends BadRequestError {
 export class ExternalAPIError extends AppError {
   constructor(
     message = 'External API error',
-    statusCode = 503,
-    code = 'EXTERNAL_API_ERROR',
-    originalError = null,
+    statusCode = HttpStatusCode.INTERNAL_SERVER_ERROR,
+    code = ErrorCode.INTERNAL_ERROR,
+    public originalError = null,
   ) {
     super(message, statusCode, code);
     this.originalError = originalError;
