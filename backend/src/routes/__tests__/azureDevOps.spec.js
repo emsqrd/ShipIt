@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import express from 'express';
 import request from 'supertest';
-import ENVIRONMENT from '../../contracts/environment.js';
+
+import { ENVIRONMENT } from '../../contracts/environment.js';
 
 // Create proper ValidationError mock that will be returned in actual tests
 class MockValidationError extends Error {
