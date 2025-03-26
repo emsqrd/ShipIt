@@ -6,9 +6,9 @@ import express from 'express';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 
-import config from './config/config.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import azureDevOpsRouter from './routes/azureDevOps.js';
+import config from './services/configService.js';
 import { NotFoundError } from './utils/errors.js';
 
 // Validate configuration before configuring the app

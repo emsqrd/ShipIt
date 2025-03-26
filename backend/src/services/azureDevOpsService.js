@@ -1,6 +1,6 @@
 import azureDevOpsClient from '../clients/azureDevOpsClient.js';
-import config from '../config/config.js';
 import { AppError, ExternalAPIError, NotFoundError } from '../utils/errors.js';
+import config from './configService.js';
 
 // Cache configuration
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds

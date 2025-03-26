@@ -1,5 +1,5 @@
 // Configuration singleton to manage all environment variables
-class Config {
+class ConfigService {
   constructor() {
     this.refresh();
   }
@@ -23,4 +23,4 @@ class Config {
 }
 
 // Export a singleton instance
-export default new Config();
+export default new ConfigService();
