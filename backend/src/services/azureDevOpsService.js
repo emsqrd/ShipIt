@@ -151,7 +151,7 @@ async function getAllPipelineRunsByEnvironment(releasePipelines, environment) {
 
   // Filter out rejected promises but log them
   return results
-    .map((result, index) => {
+    .map((result) => {
       if (result.status === 'fulfilled') {
         return result.value;
       } else {

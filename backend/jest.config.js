@@ -1,16 +1,20 @@
 export default {
   testEnvironment: 'node',
+  preset: 'ts-jest',
   transform: {
+    '^.+\\.ts$': 'ts-jest',
     '^.+\\.js$': 'babel-jest',
   },
-  moduleFileExtensions: ['js', 'json'],
+  moduleFileExtensions: ['js', 'ts', 'json'],
   // For ES modules support
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',
+    '^(\\.{1,2}/.*)\\.ts$': '$1',
   },
   // Collect coverage data from your source files
   collectCoverageFrom: [
     'src/**/*.js',
+    'src/**/*.ts',
     '!src/**/__tests__/**',
     '!src/index.js',
     '!src/config/env.js',
