@@ -14,7 +14,6 @@ jest.unstable_mockModule('../../utils/errors.js', () => ({
 // Mock config module
 const mockConfig = {
   buildDefinitionFolder: 'release',
-  refresh: jest.fn(),
 };
 
 jest.unstable_mockModule('../../config/config.js', () => ({
