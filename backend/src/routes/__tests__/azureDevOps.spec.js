@@ -19,8 +19,8 @@ const mockValidationError = jest
   .fn()
   .mockImplementation((message) => new MockValidationError(message));
 
-jest.unstable_mockModule('../../utils/errors.js', () => ({
-  ValidationError: mockValidationError,
+jest.unstable_mockModule('../../utils/errors.js', () => ({  
+  RequestValidationError: mockValidationError,
 }));
 
 // Mock the catchAsync middleware to pass through to the original function

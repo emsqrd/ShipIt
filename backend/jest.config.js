@@ -21,5 +21,8 @@ export default {
     '!src/app.js',
     '!src/config/config.js',
     '!src/contracts/**',
+    '!dist/**',
   ],
+  // Exclude paths from test discovery entirely
+  testPathIgnorePatterns: ['/node_modules/', '/dist/'],
 };

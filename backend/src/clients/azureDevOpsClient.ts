@@ -1,27 +1,30 @@
 import { HttpMethod } from '../contracts/httpMethod.js';
 import config from '../services/configService.js';
+import { ErrorCode } from '../types/ErrorCode.js';
+import { HttpStatusCode } from '../types/HttpStatusCode.js';
 import { ExternalAPIError } from '../utils/errors.js';
 
 const AZURE_API_VERSION = 'api-version=7.1';
 
 export class AzureDevOpsClient {
-  constructor(baseUrl = config.azureBaseUrl) {
-    this.baseUrl = baseUrl;
+  public baseUrl: string | undefined;
+
+  constructor(baseUrl?: string) {
+    this.baseUrl = baseUrl || config.azureBaseUrl;
   }
 
   //TODO: Move this to a base class when implementing JiraClient
-  async #fetchApi(method, url, body = null) {
-    const options = {
+  async #fetchApi(method: HttpMethod, url: string, body: string | null = null) {
+    type FetchOptions = Parameters<typeof fetch>[1];
+
+    const options: FetchOptions = {
       method,
       headers: {
         Authorization: `Basic ${config.azurePat}`,
         'Content-Type': 'application/json',
       },
+      ...(body && { body: JSON.stringify(body) }),
     };
-
-    if (body) {
-      options.body = JSON.stringify(body);
-    }
 
     try {
       const response = await fetch(url, options);
@@ -31,24 +34,24 @@ export class AzureDevOpsClient {
         throw new ExternalAPIError(
           `Azure DevOps API error: ${response.status} - ${errorText}`,
           response.status,
-          'AZURE_API_ERROR',
-          { url, status: response.status, statusText: response.statusText },
+          ErrorCode.AZURE_API_ERROR,
         );
       }
 
       return response.json();
-    } catch (error) {
+    } catch (error: unknown) {
       // If this is already our custom error, rethrow it
       if (error instanceof ExternalAPIError) {
         throw error;
       }
 
       // If it's a network error or other fetch related error
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new ExternalAPIError(
-        `Azure DevOps API request failed: ${error.message}`,
-        503,
-        'AZURE_CONNECTION_ERROR',
-        error,
+        `Azure DevOps API request failed: ${errorMessage}`,
+        HttpStatusCode.SERVICE_UNAVAILABLE,
+        ErrorCode.AZURE_CONNECTION_ERROR,
+        undefined,
       );
     }
   }
@@ -58,11 +61,11 @@ export class AzureDevOpsClient {
     return `${this.baseUrl}/pipelines?${AZURE_API_VERSION}`;
   }
 
-  #getPipelineRunsUrl(pipelineId) {
+  #getPipelineRunsUrl(pipelineId: number) {
     return `${this.baseUrl}/pipelines/${pipelineId}/runs?${AZURE_API_VERSION}`;
   }
 
-  #getPipelineRunDetailsUrl(pipelineId, runId) {
+  #getPipelineRunDetailsUrl(pipelineId: number, runId: number) {
     return `${this.baseUrl}/pipelines/${pipelineId}/runs/${runId}?${AZURE_API_VERSION}`;
   }
 
@@ -71,11 +74,11 @@ export class AzureDevOpsClient {
     return this.#fetchApi(HttpMethod.GET, this.#getPipelinesUrl());
   }
 
-  async getPipelineRuns(pipelineId) {
+  async getPipelineRuns(pipelineId: number) {
     return this.#fetchApi(HttpMethod.GET, this.#getPipelineRunsUrl(pipelineId));
   }
 
-  async getPipelineRunDetails(pipelineId, runId) {
+  async getPipelineRunDetails(pipelineId: number, runId: number) {
     return this.#fetchApi(HttpMethod.GET, this.#getPipelineRunDetailsUrl(pipelineId, runId));
   }
 }

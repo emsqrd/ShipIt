@@ -16,24 +16,29 @@ const mockConfig = {
   buildDefinitionFolder: 'release',
 };
 
-jest.unstable_mockModule('../../config/config.js', () => ({
+jest.unstable_mockModule('../../services/configService.js', () => ({
   default: mockConfig,
+}));
+
+// Mock implementation
+const mockGetPipelines = jest.fn().mockResolvedValue({ value: [] });
+const mockGetPipelineRuns = jest.fn().mockResolvedValue({ value: [] });
+const mockGetPipelineRunDetails = jest.fn().mockResolvedValue({});
+
+// Override the imported module
+jest.unstable_mockModule('../../clients/azureDevOpsClient.js', () => ({
+  default: {
+    getPipelines: mockGetPipelines,
+    getPipelineRuns: mockGetPipelineRuns,
+    getPipelineRunDetails: mockGetPipelineRunDetails
+  }
 }));
 
 // Import dependencies after setting up mocks
 const { default: azureDevOpsClient } = await import('../../clients/azureDevOpsClient.js');
 const { clearCache, getReleasedVersions } = await import('../azureDevOpsService.js');
 
-// Mock the azureDevOpsClient methods
-jest
-  .spyOn(azureDevOpsClient, 'getPipelines')
-  .mockImplementation(() => Promise.resolve({ value: [] }));
-jest
-  .spyOn(azureDevOpsClient, 'getPipelineRuns')
-  .mockImplementation(() => Promise.resolve({ value: [] }));
-jest
-  .spyOn(azureDevOpsClient, 'getPipelineRunDetails')
-  .mockImplementation(() => Promise.resolve({}));
+
 
 // Mock console.error to prevent test output pollution
 const originalConsoleError = console.error;
