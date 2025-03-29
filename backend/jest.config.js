@@ -2,7 +2,12 @@ export default {
   testEnvironment: 'node',
   preset: 'ts-jest',
   transform: {
-    '^.+\\.ts$': 'ts-jest',
+    '^.+\\.ts$': [
+      'ts-jest',
+      {
+        tsconfig: 'tsconfig.test.json',
+      },
+    ],
     '^.+\\.js$': 'babel-jest',
   },
   moduleFileExtensions: ['js', 'ts', 'json'],

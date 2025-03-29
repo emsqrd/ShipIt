@@ -11,7 +11,6 @@ import {
   beforeEach,
   describe,
   expect,
-  fit,
   it,
   jest,
   xit
@@ -159,7 +158,7 @@ describe('AzureDevOpsClient', () => {
     });
 
     describe('error handling', () => {
-      fit('should throw ExternalAPIError when response is not ok', async () => {
+      it('should throw ExternalAPIError when response is not ok', async () => {
         const errorStatus = 404;
         const errorText = 'Not Found';
 
@@ -181,14 +180,6 @@ describe('AzureDevOpsClient', () => {
             `Azure DevOps API error: ${errorStatus} - Resource not found`,
           ),
         });
-
-        // await expect(client.getPipelines()).rejects.toThrow();
-        // expect(MockExternalAPIError).toHaveBeenCalledWith(
-        //   expect.stringContaining(`Azure DevOps API error: ${errorStatus}`),
-        //   errorStatus,
-        //   'AZURE_API_ERROR',
-        //   expect.any(Object),
-        // );
       });
 
       xit('should handle network errors with ExternalAPIError', async () => {
@@ -196,12 +187,6 @@ describe('AzureDevOpsClient', () => {
         mockFetch.mockRejectedValue(networkError);
 
         await expect(client.getPipelines()).rejects.toThrow();
-        // expect(MockExternalAPIError).toHaveBeenCalledWith(
-        //   expect.stringContaining('Azure DevOps API request failed'),
-        //   503,
-        //   'AZURE_CONNECTION_ERROR',
-        //   networkError,
-        // );
       });
     });
   });
