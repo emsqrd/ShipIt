@@ -4,7 +4,7 @@ import request from 'supertest';
 import { ENVIRONMENT } from '../../contracts/environment.js';
 import { ReleasedVersion } from '../../types/AzureDevOpsTypes.js';
 
-// Set up mocks for ES modules
+// Set up mocks for ES modules - with simpler approach to avoid type issues
 jest.mock('../../services/azureDevOpsService.js', () => {
   const mockGetReleasedVersions = jest.fn();
   return {
@@ -14,9 +14,12 @@ jest.mock('../../services/azureDevOpsService.js', () => {
   };
 });
 
-// Import the module after mocking
-import { getReleasedVersions } from '../../services/azureDevOpsService.js';
+// Import the module after mocking and cast to any to avoid TypeScript errors
+import * as azureDevOpsServiceModule from '../../services/azureDevOpsService.js';
 import azureDevOpsRouter from '../azureDevOps.js';
+
+// Cast the imported mock to any to avoid TypeScript errors with mockResolvedValue
+const getReleasedVersions = azureDevOpsServiceModule.getReleasedVersions as any;
 
 // Also mock the error handler middleware
 jest.mock('../../middleware/errorHandler.js', () => {
