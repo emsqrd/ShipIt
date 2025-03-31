@@ -1,5 +1,10 @@
 import { HttpMethod } from '../contracts/httpMethod.js';
 import config from '../services/configService.js';
+import {
+  PipelineResponse,
+  PipelineRunDetailResponse,
+  PipelineRunResponse,
+} from '../types/AzureDevOpsTypes.js';
 import { ErrorCode } from '../types/ErrorCode.js';
 import { HttpStatusCode } from '../types/HttpStatusCode.js';
 import { ExternalAPIError } from '../utils/errors.js';
@@ -70,16 +75,23 @@ export class AzureDevOpsClient {
   }
 
   // API Calling methods
-  async getPipelines() {
-    return this.#fetchApi(HttpMethod.GET, this.#getPipelinesUrl());
+  async getPipelines(): Promise<PipelineResponse> {
+    return await this.#fetchApi(HttpMethod.GET, this.#getPipelinesUrl());
   }
 
-  async getPipelineRuns(pipelineId: number) {
-    return this.#fetchApi(HttpMethod.GET, this.#getPipelineRunsUrl(pipelineId));
+  async getPipelineRuns(pipelineId: number): Promise<PipelineRunResponse> {
+    return await this.#fetchApi(HttpMethod.GET, this.#getPipelineRunsUrl(pipelineId));
   }
 
-  async getPipelineRunDetails(pipelineId: number, runId: number) {
-    return this.#fetchApi(HttpMethod.GET, this.#getPipelineRunDetailsUrl(pipelineId, runId));
+  async getPipelineRunDetails(
+    pipelineId: number,
+    runId: number,
+  ): Promise<PipelineRunDetailResponse> {
+    const response = await this.#fetchApi(
+      HttpMethod.GET,
+      this.#getPipelineRunDetailsUrl(pipelineId, runId),
+    );
+    return response;
   }
 }
 

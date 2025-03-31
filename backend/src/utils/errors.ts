@@ -2,6 +2,19 @@
 import { ErrorCode } from '../types/ErrorCode.js';
 import { HttpStatusCode } from '../types/HttpStatusCode.js';
 
+// utility functions for error handling
+export function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  return String(error);
+}
+
+export function getErrorStatusCode(error: unknown): number | undefined {
+  if (error && typeof error === 'object' && 'statusCode' in error) {
+    return (error as { statusCode: number }).statusCode;
+  }
+  return undefined;
+}
+
 /**
  * Base Application Error class
  */
@@ -54,7 +67,7 @@ export class ExternalAPIError extends AppError {
     message = 'External API error',
     statusCode = HttpStatusCode.INTERNAL_SERVER_ERROR,
     code = ErrorCode.INTERNAL_ERROR,
-    public originalError = null,
+    public originalError: unknown = null,
   ) {
     super(message, statusCode, code);
     this.originalError = originalError;
