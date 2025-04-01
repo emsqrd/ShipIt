@@ -38,6 +38,21 @@ function setCachedData<T>(key: string, data: T, ttl = CACHE_TTL): T {
   return data;
 }
 
+// Utility function to clear the cache (can be exposed if needed)
+export function clearCache(keyPattern = null) {
+  if (keyPattern) {
+    // Clear specific cache entries matching the pattern
+    for (const key of cache.keys()) {
+      if (key.includes(keyPattern)) {
+        cache.delete(key);
+      }
+    }
+  } else {
+    // Clear all cache
+    cache.clear();
+  }
+}
+
 // Fetch Pipeline Data from Azure DevOps API
 async function getPipelines(): Promise<Pipeline[]> {
   const cacheKey = 'pipelines';
@@ -65,98 +80,6 @@ async function getPipelines(): Promise<Pipeline[]> {
   }
 }
 
-async function getEnrichedPipelineRuns(pipelineId: number): Promise<PipelineRun[]> {
-  const pipelineRuns = await azureDevOpsClient.getPipelineRuns(pipelineId);
-
-  const pipelineRunDetails = pipelineRuns.value.map(
-    async (run) =>
-      await azureDevOpsClient
-        .getPipelineRunDetails(run.pipeline.id, run.id)
-        .then((detail) => ({
-          id: run.id,
-          name: run.name,
-          environment: run.templateParameters.env,
-          createdDate: run.createdDate,
-          pipeline: {
-            id: run.pipeline.id,
-            name: run.pipeline.name,
-            folder: run.pipeline.folder,
-          },
-          pipelineRunDetail: {
-            id: detail.id,
-            name: detail.name,
-            repo: detail.resources.pipelines['ci-artifact-pipeline'].pipeline.name,
-            version: detail.resources.pipelines['ci-artifact-pipeline'].version,
-          },
-        }))
-        .catch((error) => {
-          console.error(`Error fetching details for pipeline ${pipelineId}, run ${run.id}:`, error);
-          throw new ExternalAPIError(
-            `Failed to fetch pipeline run details for pipeline ${pipelineId}, run ${run.id}: ${getErrorMessage(error)}`,
-            getErrorStatusCode(error) || HttpStatusCode.SERVICE_UNAVAILABLE,
-            ErrorCode.AZURE_PIPELINE_RUN_DETAILS_ERROR,
-            error,
-          );
-        }),
-  );
-
-  return Promise.all(pipelineRunDetails);
-}
-
-// async function getPipelineRuns(pipelineId: number): Promise<PipelineRun[]> {
-//   try {
-//     const response = await azureDevOpsClient.getPipelineRuns(pipelineId);
-
-//     const result: PipelineRun[] = response.map((response) => ({
-//       id: response.value.id,
-//       name: response.value.name,
-//       environment: response.value.templateParameters.env,
-//       createdDate: response.value.createdDate,
-//       pipeline: {
-//         id: response.value.pipeline.value.id,
-//         name: response.value.pipeline.value.name,
-//         folder: response.value.pipeline.value.folder,
-//       },
-//     }));
-
-//     return result;
-//   } catch (error) {
-//     console.error(`Error fetching pipeline runs for pipeline ${pipelineId}:`, error);
-//     throw new ExternalAPIError(
-//       `Failed to fetch pipeline runs for pipeline ${pipelineId}: ${getErrorMessage(error)}`,
-//       getErrorStatusCode(error) || HttpStatusCode.SERVICE_UNAVAILABLE,
-//       ErrorCode.AZURE_PIPELINE_RUNS_FETCH_ERROR,
-//       error,
-//     );
-//   }
-// }
-
-// async function getPipelineRunDetails(
-//   pipelineId: number,
-//   runId: number,
-// ): Promise<PipelineRunDetail> {
-//   try {
-//     const response = await azureDevOpsClient.getPipelineRunDetails(pipelineId, runId);
-
-//     const result: PipelineRunDetail = {
-//       id: response.id,
-//       name: response.name,
-//       repo: response.resources?.pipelines?.['ci-artifact-pipeline']?.pipeline?.value.name,
-//       version: response.resources?.pipelines?.['ci-artifact-pipeline']?.version,
-//     };
-
-//     return result;
-//   } catch (error) {
-//     console.error(`Error fetching details for pipeline ${pipelineId}, run ${runId}:`, error);
-//     throw new ExternalAPIError(
-//       `Failed to fetch pipeline run details for pipeline ${pipelineId}, run ${runId}: ${getErrorMessage(error)}`,
-//       getErrorStatusCode(error) || HttpStatusCode.SERVICE_UNAVAILABLE,
-//       ErrorCode.AZURE_PIPELINE_RUN_DETAILS_ERROR,
-//       error,
-//     );
-//   }
-// }
-
 async function getReleasePipelines(): Promise<Pipeline[]> {
   const pipelines = await getPipelines();
 
@@ -177,58 +100,49 @@ async function getReleasePipelines(): Promise<Pipeline[]> {
   return releasePipelines;
 }
 
-// Batch fetch multiple pipeline run details in parallel
-// async function batchGetPipelineRunDetails(
-//   runsToFetch: PipelineRun[],
-// ): Promise<PipelineRunDetail[]> {
-//   if (!runsToFetch || !runsToFetch.length) return [];
-
-//   const results: PromiseSettledResult<PipelineRunDetail>[] = await Promise.allSettled(
-//     runsToFetch.map(async ({ pipeline: { id: pipelineId }, id: pipelineRunId }) => {
-//       try {
-//         return await getPipelineRunDetails(pipelineId, pipelineRunId);
-//       } catch (error) {
-//         console.error(
-//           `Error fetching details for pipeline ${pipelineId}, run ${pipelineRunId}:`,
-//           error,
-//         );
-//         // Re-throw with pipeline context for Promise.allSettled
-//         throw new ExternalAPIError(
-//           `Failed to fetch details for pipeline ${pipelineId}, run ${pipelineRunId}: ${getErrorMessage(error)}`,
-//           getErrorStatusCode(error) || HttpStatusCode.SERVICE_UNAVAILABLE,
-//           ErrorCode.AZURE_BATCH_PIPELINE_DETAILS_ERROR,
-//           error,
-//         );
-//       }
-//     }),
-//   );
-
-//   // Process the results - extract fulfilled values and log rejected reasons
-//   return results.flatMap((result) => {
-//     if (result.status === 'fulfilled' && result.value !== null) {
-//       return [result.value];
-//     } else {
-//       // Log the rejection but return null so other results can be processed
-//       if (result.status === 'rejected') {
-//         console.error(`Failed to fetch pipeline details: ${result.reason}`);
-//       }
-//       return [];
-//     }
-//   });
-// }
-
 // Fetch all runs for one pipeline in a single batch
 async function getReleasePipelineRunsByEnvironment(
   pipelineId: number,
   environment: ENVIRONMENT,
 ): Promise<PipelineRun[]> {
-  const pipelineRuns: PipelineRun[] = await getEnrichedPipelineRuns(pipelineId);
+  const pipelineRuns = (await azureDevOpsClient.getPipelineRuns(pipelineId)).value?.filter(
+    (run) => run.templateParameters?.env === environment,
+  );
 
-  if (!pipelineRuns?.length) {
-    return [];
-  }
+  // Map the runs to prepare an array of all the detail fetch promises
+  const detailPromises = pipelineRuns.map(async (run) => {
+    return await azureDevOpsClient.getPipelineRunDetails(run.pipeline.id, run.id);
+  });
 
-  return pipelineRuns.filter((run) => run.environment === environment);
+  // Execute all detail requests in parallel
+  const details = await Promise.all(detailPromises);
+
+  // Now combine the run data with the detailed data
+  return pipelineRuns
+    .map((run, index) => {
+      const detail = details[index];
+
+      const ciArtifactPipeline = detail?.resources?.pipelines?.['ci-artifact-pipeline'];
+
+      return {
+        id: run.id,
+        name: run.name,
+        environment: run.templateParameters?.env,
+        createdDate: run.createdDate,
+        pipeline: {
+          id: run.pipeline?.id,
+          name: run.pipeline?.name,
+          folder: run.pipeline?.folder,
+        },
+        pipelineRunDetail: {
+          id: detail.id,
+          name: detail.name,
+          repo: ciArtifactPipeline?.pipeline?.name,
+          version: ciArtifactPipeline?.version,
+        },
+      };
+    })
+    .filter((envPipeline) => envPipeline.environment === environment);
 }
 
 // Gets all pipeline runs for all pipelines
@@ -236,28 +150,23 @@ async function getAllPipelineRunsByEnvironment(
   releasePipelines: Pipeline[],
   environment: ENVIRONMENT,
 ): Promise<PipelineRun[]> {
-  const results: PromiseSettledResult<PipelineRun | null>[] = await Promise.allSettled(
-    releasePipelines.map(async (pipeline) => {
-      const runs = await getReleasePipelineRunsByEnvironment(pipeline.id, environment);
-      if (!runs || !runs.length) return null;
-
-      // Sort runs by date and take the most recent
-      const [mostRecentRun] = runs.sort(
-        (a, b) => new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime(),
-      );
-
-      return mostRecentRun;
-    }),
+  // Fetch all pipeline runs for all pipelines in parallel
+  const allRunsPromises = releasePipelines.map((pipeline) =>
+    getReleasePipelineRunsByEnvironment(pipeline.id, environment),
   );
 
-  // Filter out rejected promises but log them
-  return results.flatMap((result) => {
-    if (result.status === 'fulfilled' && result.value !== null) {
-      return [result.value];
-    } else {
-      return [];
-    }
-  });
+  // Wait for all pipeline run requests to complete
+  const allPipelineRuns = await Promise.all(allRunsPromises);
+
+  // Process the results - get the most recent run for each pipeline that has valid runs
+  return allPipelineRuns
+    .filter((runs) => runs && runs.length > 0)
+    .map((runs) => {
+      // Sort runs by date and take the most recent
+      return runs.sort(
+        (a, b) => new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime(),
+      )[0];
+    });
 }
 
 // Get all released versions for a specific environment
@@ -275,14 +184,6 @@ export async function getReleasedVersions(environment: ENVIRONMENT): Promise<Rel
       pipelineName: pipelineRun.pipeline.name,
       runName: pipelineRun.name,
       version: pipelineRun.pipelineRunDetail.version,
-      // if (!details) return null;
-      // const pipeline = runsToFetch[index].pipeline;
-      // return {
-      //   repo: details.resources?.pipelines?.['ci-artifact-pipeline']?.pipeline?.name,
-      //   pipelineName: pipeline.name,
-      //   runName: details.name,
-      //   version: details.resources?.pipelines?.['ci-artifact-pipeline']?.version,
-      // };
     }));
 
     return releasedVersions.filter(Boolean);
@@ -300,21 +201,6 @@ export async function getReleasedVersions(environment: ENVIRONMENT): Promise<Rel
       ErrorCode.AZURE_ENVIRONMENT_RUNS_ERROR,
       error,
     );
-  }
-}
-
-// Utility function to clear the cache (can be exposed if needed)
-export function clearCache(keyPattern = null) {
-  if (keyPattern) {
-    // Clear specific cache entries matching the pattern
-    for (const key of cache.keys()) {
-      if (key.includes(keyPattern)) {
-        cache.delete(key);
-      }
-    }
-  } else {
-    // Clear all cache
-    cache.clear();
   }
 }
 
