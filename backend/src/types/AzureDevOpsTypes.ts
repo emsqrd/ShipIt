@@ -75,7 +75,9 @@ export type PipelineRunDetail = {
 // Domain Release Types
 export type ReleasedVersion = {
   repo: string;
+  pipelineId: number;
   pipelineName: string;
+  runId: number;
   runName: string;
   version: string;
 };

@@ -80,12 +80,6 @@ async function getPipelines(): Promise<Pipeline[]> {
   }
 }
 
-// async function getPipelineRuns(pipelineId: number): Promise<PipelineRun[]> {
-//   try {
-//     const reponse = await azureDevOpsClient.getPipelineRuns(pipelineId);
-//   } catch (error) {}
-// }
-
 async function getReleasePipelines(): Promise<Pipeline[]> {
   const pipelines = await getPipelines();
 
@@ -96,7 +90,7 @@ async function getReleasePipelines(): Promise<Pipeline[]> {
   const releasePipelines = pipelines.filter(
     (pipeline) =>
       pipeline.folder.includes(config.buildDefinitionFolder) &&
-      !pipeline.folder.toLowerCase().includes('automated'), //todo: probably remove this at some point to get int releases
+      !pipeline.folder.toLowerCase().includes('automated'), //todo: remove this at some point to get int releases look into build stages
   );
 
   if (releasePipelines.length === 0) {
@@ -107,70 +101,49 @@ async function getReleasePipelines(): Promise<Pipeline[]> {
 }
 
 // Fetch all runs for one pipeline in a single batch
-async function getReleasePipelineRunsByEnvironment(
+async function getMostRecentReleasePipelineRunByEnvironment(
   pipelineId: number,
   environment: ENVIRONMENT,
-): Promise<PipelineRun[]> {
-  const pipelineRuns = (await azureDevOpsClient.getPipelineRuns(pipelineId)).value?.filter(
-    (run) => run.templateParameters?.env === environment,
+): Promise<PipelineRun | null> {
+  // Get the most recent run for the environment
+  const mostRecentPipelineRun = (await azureDevOpsClient.getPipelineRuns(pipelineId)).value
+    ?.filter((run) => run.templateParameters?.env === environment)
+    .sort((a, b) => new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime())[0];
+
+  if (!mostRecentPipelineRun) {
+    return null;
+  }
+
+  const pipelineRunDetails = await azureDevOpsClient.getPipelineRunDetails(
+    mostRecentPipelineRun.pipeline.id,
+    mostRecentPipelineRun.id,
   );
 
-  // Map the runs to prepare an array of all the detail fetch promises
-  const detailPromises = pipelineRuns.map(async (run) => {
-    return await azureDevOpsClient.getPipelineRunDetails(run.pipeline.id, run.id);
-  });
+  const ciArtifactPipeline = pipelineRunDetails?.resources?.pipelines?.['ci-artifact-pipeline'];
 
-  // Execute all detail requests in parallel
-  const details = await Promise.all(detailPromises);
+  // We only want pipeline runs that link back to CI Pipelines
+  if (!ciArtifactPipeline) {
+    return null;
+  }
 
   // Now combine the run data with the detailed data
-  return pipelineRuns.map((run, index) => {
-    const detail = details[index];
-
-    const ciArtifactPipeline = detail?.resources?.pipelines?.['ci-artifact-pipeline'];
-
-    return {
-      id: run.id,
-      name: run.name,
-      environment: run.templateParameters?.env,
-      createdDate: run.createdDate,
-      pipeline: {
-        id: run.pipeline?.id,
-        name: run.pipeline?.name,
-        folder: run.pipeline?.folder,
-      },
-      pipelineRunDetail: {
-        id: detail.id,
-        name: detail.name,
-        repo: ciArtifactPipeline?.pipeline?.name,
-        version: ciArtifactPipeline?.version,
-      },
-    };
-  });
-}
-
-// Gets all pipeline runs for all pipelines
-async function getAllPipelineRunsByEnvironment(
-  releasePipelines: Pipeline[],
-  environment: ENVIRONMENT,
-): Promise<PipelineRun[]> {
-  // Fetch all pipeline runs for all pipelines in parallel
-  const allRunsPromises = releasePipelines.map((pipeline) =>
-    getReleasePipelineRunsByEnvironment(pipeline.id, environment),
-  );
-
-  // Wait for all pipeline run requests to complete
-  const allPipelineRuns = await Promise.all(allRunsPromises);
-
-  // Process the results - get the most recent run for each pipeline that has valid runs
-  return allPipelineRuns
-    .filter((runs) => runs && runs.length > 0)
-    .map((runs) => {
-      // Sort runs by date and take the most recent
-      return runs.sort(
-        (a, b) => new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime(),
-      )[0];
-    });
+  return {
+    id: mostRecentPipelineRun.id,
+    name: mostRecentPipelineRun.name,
+    environment: mostRecentPipelineRun.templateParameters?.env,
+    createdDate: mostRecentPipelineRun.createdDate,
+    pipeline: {
+      id: mostRecentPipelineRun.pipeline?.id,
+      name: mostRecentPipelineRun.pipeline?.name,
+      folder: mostRecentPipelineRun.pipeline?.folder,
+    },
+    pipelineRunDetail: {
+      id: pipelineRunDetails.id,
+      name: pipelineRunDetails.name,
+      repo: ciArtifactPipeline?.pipeline?.name,
+      version: ciArtifactPipeline?.version,
+    },
+  };
 }
 
 // Get all released versions for a specific environment
@@ -179,18 +152,26 @@ export async function getReleasedVersions(environment: ENVIRONMENT): Promise<Rel
     // Get all release pipelines
     const releasePipelines = await getReleasePipelines();
 
-    // Get all pipeline runs in parallel
-    const validPipelineRuns = await getAllPipelineRunsByEnvironment(releasePipelines, environment);
+    const validPipelineRunPromises = releasePipelines.map(async (pipeline) => {
+      return await getMostRecentReleasePipelineRunByEnvironment(pipeline.id, environment);
+    });
+
+    // Wait for all promises to resolve
+    const validPipelineRuns = await Promise.all(validPipelineRunPromises);
 
     // Map the results into the final format
-    const releasedVersions: ReleasedVersion[] = validPipelineRuns.map((pipelineRun) => ({
-      repo: pipelineRun.pipelineRunDetail.repo,
-      pipelineName: pipelineRun.pipeline.name,
-      runName: pipelineRun.name,
-      version: pipelineRun.pipelineRunDetail.version,
-    }));
+    const releasedVersions: ReleasedVersion[] = validPipelineRuns
+      .filter((pipelineRun) => pipelineRun !== null)
+      .map((pipelineRun) => ({
+        repo: pipelineRun.pipelineRunDetail.repo,
+        pipelineId: pipelineRun.pipeline.id,
+        pipelineName: pipelineRun.pipeline.name,
+        runId: pipelineRun.id,
+        runName: pipelineRun.name,
+        version: pipelineRun.pipelineRunDetail.version,
+      }));
 
-    return releasedVersions.filter(Boolean);
+    return releasedVersions;
   } catch (error) {
     // If it's already one of our application errors, rethrow it
     if (error instanceof AppError) {
