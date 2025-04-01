@@ -80,6 +80,12 @@ async function getPipelines(): Promise<Pipeline[]> {
   }
 }
 
+// async function getPipelineRuns(pipelineId: number): Promise<PipelineRun[]> {
+//   try {
+//     const reponse = await azureDevOpsClient.getPipelineRuns(pipelineId);
+//   } catch (error) {}
+// }
+
 async function getReleasePipelines(): Promise<Pipeline[]> {
   const pipelines = await getPipelines();
 
@@ -118,31 +124,29 @@ async function getReleasePipelineRunsByEnvironment(
   const details = await Promise.all(detailPromises);
 
   // Now combine the run data with the detailed data
-  return pipelineRuns
-    .map((run, index) => {
-      const detail = details[index];
+  return pipelineRuns.map((run, index) => {
+    const detail = details[index];
 
-      const ciArtifactPipeline = detail?.resources?.pipelines?.['ci-artifact-pipeline'];
+    const ciArtifactPipeline = detail?.resources?.pipelines?.['ci-artifact-pipeline'];
 
-      return {
-        id: run.id,
-        name: run.name,
-        environment: run.templateParameters?.env,
-        createdDate: run.createdDate,
-        pipeline: {
-          id: run.pipeline?.id,
-          name: run.pipeline?.name,
-          folder: run.pipeline?.folder,
-        },
-        pipelineRunDetail: {
-          id: detail.id,
-          name: detail.name,
-          repo: ciArtifactPipeline?.pipeline?.name,
-          version: ciArtifactPipeline?.version,
-        },
-      };
-    })
-    .filter((envPipeline) => envPipeline.environment === environment);
+    return {
+      id: run.id,
+      name: run.name,
+      environment: run.templateParameters?.env,
+      createdDate: run.createdDate,
+      pipeline: {
+        id: run.pipeline?.id,
+        name: run.pipeline?.name,
+        folder: run.pipeline?.folder,
+      },
+      pipelineRunDetail: {
+        id: detail.id,
+        name: detail.name,
+        repo: ciArtifactPipeline?.pipeline?.name,
+        version: ciArtifactPipeline?.version,
+      },
+    };
+  });
 }
 
 // Gets all pipeline runs for all pipelines
