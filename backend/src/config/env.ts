@@ -13,7 +13,7 @@ export interface Environment {
   PORT: number;
   AZURE_BASE_URL: string;
   AZURE_PAT: string;
-  BUILD_DEFINITION_FOLDER: string;
+  RELEASE_PIPELINE_FOLDER: string;
 }
 
 const filename = fileURLToPath(import.meta.url);
@@ -51,12 +51,12 @@ if (missingVars.length > 0) {
 
 // Set default values for optional variables with proper type coercion
 process.env.PORT = String(process.env.PORT || 3000);
-process.env.BUILD_DEFINITION_FOLDER = process.env.BUILD_DEFINITION_FOLDER || '\\RCT-CD';
+process.env.RELEASE_PIPELINE_FOLDER = process.env.RELEASE_PIPELINE_FOLDER || '\\RCT-CD';
 
 // Export typed environment variables
 export const env: Environment = {
   PORT: parseInt(process.env.PORT, 10),
   AZURE_BASE_URL: process.env.AZURE_BASE_URL!,
   AZURE_PAT: process.env.AZURE_PAT!,
-  BUILD_DEFINITION_FOLDER: process.env.BUILD_DEFINITION_FOLDER,
+  RELEASE_PIPELINE_FOLDER: process.env.RELEASE_PIPELINE_FOLDER,
 };
