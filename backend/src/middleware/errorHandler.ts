@@ -1,6 +1,6 @@
 import { env } from '../config/env.js';
 
-import { NextFunction, Request, Response } from 'express';
+import { NextFunction, Request, RequestHandler, Response } from 'express';
 
 import { ErrorCode } from '../enums/ErrorCode.js';
 import { HttpStatusCode } from '../enums/HttpStatusCode.js';
@@ -50,7 +50,13 @@ export const errorHandler = (
   });
 };
 
-type AsyncRequestHandler = (req: Request, res: Response, next: NextFunction) => Promise<void>;
+// Use a more explicit promise-based RequestHandler type
+type AsyncRequestHandler = RequestHandler<
+  Record<string, unknown>,
+  unknown,
+  unknown,
+  Record<string, unknown>
+>;
 
 // Middleware to catch async errors
 export const catchAsync =
