@@ -1,5 +1,5 @@
 import app from './app.js';
-import config from './config/config.js';
+import config from './services/configService.js';
 
 const PORT = config.port;
 
@@ -9,7 +9,7 @@ const server = app.listen(PORT, () => {
 });
 
 // Handle unhandled promise rejections
-process.on('unhandledRejection', (err) => {
+process.on('unhandledRejection', (err: Error) => {
   console.error('UNHANDLED REJECTION! 💥 Shutting down...');
   console.error(err.name, err.message, err.stack);
 
@@ -20,7 +20,7 @@ process.on('unhandledRejection', (err) => {
 });
 
 // Handle uncaught exceptions
-process.on('uncaughtException', (err) => {
+process.on('uncaughtException', (err: Error) => {
   console.error('UNCAUGHT EXCEPTION! 💥 Shutting down...');
   console.error(err.name, err.message, err.stack);
   process.exit(1);

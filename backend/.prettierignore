@@ -1,0 +1,9 @@
+backend/src/clients/__tests__/azureDevOpsClient.spec.ts
+/backend/src/clients/__tests__/azureDevOpsClient.spec.ts
+**/azureDevOpsClient.spec.ts
+**/*.spec.ts
+**/*.test.ts
+**/__tests__/**
+
+# Try with full path (without trailing slash)
+/Users/emsqrd/git/ShipIt/backend/src/clients/__tests__/azureDevOpsClient.spec.ts

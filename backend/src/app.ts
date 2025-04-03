@@ -6,9 +6,9 @@ import express from 'express';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 
-import config from './config/config.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import azureDevOpsRouter from './routes/azureDevOps.js';
+import config from './services/configService.js';
 import { NotFoundError } from './utils/errors.js';
 
 // Validate configuration before configuring the app
@@ -50,6 +50,13 @@ app.use('*', (req, res, next) => {
 });
 
 // Central error handler - must be last middleware
+
+//? Get this to work somehow later?
+// app.use((err: ExtendedError, req: Request, res: Response, next: NextFunction) => {
+//   return errorHandler(err, req, res, next);
+// });
+
+// @ts-expect-error - Express error handler types are complex
 app.use(errorHandler);
 
 export default app;

@@ -1,8 +1,22 @@
-// Custom error handling middleware
+import { NextFunction, Request, Response } from 'express';
+
 import { AppError } from '../utils/errors.js';
 
+interface ExtendedError extends Error {
+  statusCode?: number;
+  code?: string;
+  response?: {
+    status: number;
+  };
+}
+
 // Central error handler middleware
-export const errorHandler = (err, req, res, next) => {
+export const errorHandler = (
+  err: ExtendedError,
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   // Log error for debugging
   console.error('Error:', err);
 
@@ -23,7 +37,7 @@ export const errorHandler = (err, req, res, next) => {
         'ExternalAPIError',
       ].includes(err.name))
   ) {
-    return res.status(err.statusCode).json({
+    return res.status(err.statusCode || 500).json({
       status: 'error',
       message: err.message,
       code: err.code,
@@ -55,7 +69,11 @@ export const errorHandler = (err, req, res, next) => {
   });
 };
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+type AsyncRequestHandler = (req: Request, res: Response, next: NextFunction) => Promise<void>;
+
 // Middleware to catch async errors
-export const catchAsync = (fn) => (req, res, next) => {
-  Promise.resolve(fn(req, res, next)).catch(next);
-};
+export const catchAsync =
+  (fn: AsyncRequestHandler) => (req: Request, res: Response, next: NextFunction) => {
+    Promise.resolve(fn(req, res, next)).catch(next);
+  };
