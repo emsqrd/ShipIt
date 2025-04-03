@@ -1,446 +1,459 @@
-import { beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { NotFoundError } from '../../utils/errors.js';
+import { afterAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
+import { ExternalAPIError, NotFoundError } from '../../utils/errors.js';
 
 import { ENVIRONMENT } from '../../contracts/environment.js';
 import { PipelineResponse } from '../../types/AzureDevOpsTypes.js';
+
+// Create a configurable mock object for ConfigService
+const mockConfig = {
+  buildDefinitionFolder: 'release',
+  azureBaseUrl: 'https://mock-azure-url',
+  azurePat: 'mock-pat',
+  port: 3000,
+  validate: jest.fn()
+};
 
 // Mock the module first, before any imports that might use it
 jest.mock('../../clients/azureDevOpsClient.js', () => {
   return {
     __esModule: true,
     default: {
-      getPipelines: jest.fn()
+      getPipelines: jest.fn(),
+      getPipelineRuns: jest.fn(),
+      getPipelineRunDetails: jest.fn()
     }
   };
 });
 
+// Mock the configService module to return our configurable mockConfig object
+jest.mock('../configService.js', () => ({
+  __esModule: true,
+  default: mockConfig
+}));
+
 // Import modules after mocking
 import AzureDevOpsClient from '../../clients/azureDevOpsClient.js';
-import { getReleasedVersions } from '../azureDevOpsService.js';
+import { clearCache, getReleasedVersions } from '../azureDevOpsService.js';
 
-describe('getReleasePipelines', () => {
+// Mock console.error to prevent test output pollution
+const originalConsoleError = console.error;
+console.error = jest.fn() as jest.Mock;
+
+describe('azureDevOpsService', () => {
   beforeEach(() => {
-    // Reset mocks before each test
     jest.clearAllMocks();
+    (console.error as jest.Mock).mockClear();
+    clearCache();
+    
+    // Reset config mock to default values
+    mockConfig.buildDefinitionFolder = 'release';
   });
 
-  it('should throw NotFoundError when no pipelines are found', async () => {
-    // Set up the mock implementation for this specific test
-    const emptyPipelinesResponse: PipelineResponse = {
-      value: []
-    };
-    
-    // Cast to jest.Mock to access mockResolvedValue
-    const mockGetPipelines = AzureDevOpsClient.getPipelines as jest.Mock;
-    mockGetPipelines.mockImplementation(() => Promise.resolve(emptyPipelinesResponse));
+  afterAll(() => {
+    // Restore console.error
+    console.error = originalConsoleError;
+  });
 
-    // Test that the function throws the expected error
-    await expect(getReleasedVersions(ENVIRONMENT.DEV)).rejects.toThrow(NotFoundError);
+  describe('getReleasedVersions', () => {
+
+    it('should throw ExternalAPIError when pipeline fetch fails', async () => {
+      // Arrange
+      const mockGetPipelines = AzureDevOpsClient.getPipelines as jest.Mock;
+      mockGetPipelines.mockImplementation(() => Promise.reject());
+
+      // Act & Assert
+      await expect(getReleasedVersions(ENVIRONMENT.DEV)).rejects.toThrow(ExternalAPIError);
+    });
+    
+    it('should throw NotFoundError when no pipelines are found', async () => {
+      // Set up the mock implementation for this specific test
+      const emptyPipelinesResponse: PipelineResponse = {
+        value: []
+      };
+      
+      // Cast to jest.Mock to access mockResolvedValue
+      const mockGetPipelines = AzureDevOpsClient.getPipelines as jest.Mock;
+      mockGetPipelines.mockImplementation(() => Promise.resolve(emptyPipelinesResponse));
+  
+      // Test that the function throws the expected error
+      await expect(getReleasedVersions(ENVIRONMENT.DEV)).rejects.toThrow(NotFoundError);
+      await expect(getReleasedVersions(ENVIRONMENT.DEV)).rejects.toThrow(/No pipelines found/);
+    });
+
+
+    it('should filter pipelines based on folder criteria', async () => {
+      // Set custom buildDefinitionFolder for this test
+      mockConfig.buildDefinitionFolder = 'release';
+      
+      // Arrange
+      const mockPipelinesResponse = {
+        value: [
+          { id: 1, name: 'Pipeline1', folder: 'release' },
+          { id: 2, name: 'Pipeline2', folder: 'release/path' },
+          { id: 3, name: 'Pipeline3', folder: 'invalid/path' },
+        ],
+      };
+
+      const mockPipelineRunsResponse = {
+        value: [{
+          id: 1,
+          name: 'Pipeline1Run',
+          templateParameters: {
+            env: 'dev',
+          },
+          pipeline: { 
+            id: 1, 
+            name: 'Pipeline1', 
+            folder: 'release' 
+          },
+        }]
+      };
+
+      const mockPipelineRunDetailsResponse = {
+        id: 1,
+        name: 'Pipeline1Run1Details',
+        resources: {
+          pipelines: {
+            ['ci-artifact-pipeline']: {
+              pipeline: {
+                name: 'repo',
+              },
+              version: '1.0.0',
+            }
+          }
+        }
+      };
+
+      const ReleasedVersions = [{
+        repo: 'repo',
+        pipelineId: 1,
+        pipelineName: 'Pipeline1',
+        runId: 1,
+        runName: 'Pipeline1Run',
+        version: '1.0.0'
+      }];
+
+      const mockGetPipelines = AzureDevOpsClient.getPipelines as jest.Mock;
+      mockGetPipelines.mockImplementation(() => Promise.resolve(mockPipelinesResponse));
+      
+      const mockGetPipelineRuns = AzureDevOpsClient.getPipelineRuns as jest.Mock;
+      mockGetPipelineRuns.mockImplementation(() => Promise.resolve(mockPipelineRunsResponse));
+
+      const mockGetPipelineRunDetails = AzureDevOpsClient.getPipelineRunDetails as jest.Mock;
+      mockGetPipelineRunDetails.mockImplementation(() => Promise.resolve(mockPipelineRunDetailsResponse));
+
+      const result = await getReleasedVersions(ENVIRONMENT.DEV);
+      expect(result).toEqual(ReleasedVersions);
+    });
+
+    it('should throw NotFoundError when no pipeline runs are found', async () => {
+      // Arrange
+      const mockPipelinesResponse = {
+        value: [
+          { id: 1, name: 'Pipeline1', folder: 'release/path' },
+        ],
+      };
+
+      const mockGetPipelines = AzureDevOpsClient.getPipelines as jest.Mock;
+      mockGetPipelines.mockImplementation(() => Promise.resolve(mockPipelinesResponse));
+      
+      const mockGetPipelineRuns = AzureDevOpsClient.getPipelineRuns as jest.Mock;
+      mockGetPipelineRuns.mockImplementation(() => Promise.resolve({ value: []}));
+
+      // Act & Assert
+      await expect(getReleasedVersions(ENVIRONMENT.DEV)).rejects.toThrow(NotFoundError);
+      await expect(getReleasedVersions(ENVIRONMENT.DEV)).rejects.toThrow(/No release pipelines found matching the criteria/);
+      });
+
+      it('should throw NotFoundError when no release pipelines match criteria', async () => {
+
+      // Set the buildDefinitionFolder to something that won't match our mock data
+      mockConfig.buildDefinitionFolder = 'release';
+
+      // Set up mock data that will NOT match the criteria
+      const mockReleasePipelinesResponse = {
+        value: [
+          { id: 1, name: 'Pipeline1', folder: 'other/invalid' },
+          { id: 2, name: 'Pipeline2', folder: 'also/invalid' },
+        ],
+      };
+
+      // Make sure the mock correctly returns this data
+      const mockGetPipelines = AzureDevOpsClient.getPipelines as jest.Mock;
+      mockGetPipelines.mockImplementation(() => Promise.resolve(mockReleasePipelinesResponse))
+
+      // Act & Assert
+      await expect(getReleasedVersions(ENVIRONMENT.DEV)).rejects.toThrow(NotFoundError);
+      await expect(getReleasedVersions(ENVIRONMENT.DEV)).rejects.toThrow(
+        /No release pipelines found matching the criteria/,
+      );
+    });
+
+    it('should process pipeline runs and return formatted released versions', async () => {
+      // Arrange
+      const mockPipelinesResponse = {
+        value: [
+          { id: 1, name: 'Pipeline1', folder: 'release' },
+        ],
+      };
+
+      const mockPipelineRunsResponse = {
+        value: [{
+          id: 1,
+          name: 'Pipeline1Run',
+          templateParameters: {
+            env: 'dev',
+          },
+          pipeline: { 
+            id: 1, 
+            name: 'Pipeline1', 
+            folder: 'release' 
+          },
+        }]
+      };
+
+      const mockPipelineRunDetailsResponse = {
+        id: 1,
+        name: 'Pipeline1Run1Details',
+        resources: {
+          pipelines: {
+            ['ci-artifact-pipeline']: {
+              pipeline: {
+                name: 'repo',
+              },
+              version: '1.0.0',
+            }
+          }
+        }
+      };
+
+      const ReleasedVersions = [{
+        repo: 'repo',
+        pipelineId: 1,
+        pipelineName: 'Pipeline1',
+        runId: 1,
+        runName: 'Pipeline1Run',
+        version: '1.0.0'
+      }];
+
+      const mockGetPipelines = AzureDevOpsClient.getPipelines as jest.Mock;
+      mockGetPipelines.mockImplementation(() => Promise.resolve(mockPipelinesResponse));
+      
+      const mockGetPipelineRuns = AzureDevOpsClient.getPipelineRuns as jest.Mock;
+      mockGetPipelineRuns.mockImplementation(() => Promise.resolve(mockPipelineRunsResponse));
+
+      const mockGetPipelineRunDetails = AzureDevOpsClient.getPipelineRunDetails as jest.Mock;
+      mockGetPipelineRunDetails.mockImplementation(() => Promise.resolve(mockPipelineRunDetailsResponse));
+
+      // Act
+      const result = await getReleasedVersions(ENVIRONMENT.DEV);
+
+      // Assert
+      expect(result).toEqual(ReleasedVersions);
+    });
+
+    it('should return empty array if no valid pipeline runs exist', async () => {
+      // Arrange
+      const mockPipelinesResponse = {
+        value: [{ id: 1, name: 'Pipeline1', folder: 'release/valid' }],
+      };
+
+      // Empty pipeline runs
+      const mockGetPipelines = AzureDevOpsClient.getPipelines as jest.Mock;
+      mockGetPipelines.mockImplementation(() => Promise.resolve(mockPipelinesResponse));
+
+      const mockGetPipelineRuns = AzureDevOpsClient.getPipelineRuns as jest.Mock;
+      mockGetPipelineRuns.mockImplementation(() => Promise.resolve({ value: [] }));
+
+      // Act & Assert
+      await expect(getReleasedVersions(ENVIRONMENT.DEV)).rejects.toThrow(NotFoundError);
+      await expect(getReleasedVersions(ENVIRONMENT.DEV)).rejects.toThrow(
+        /No release pipelines found matching the criteria/
+      );
+    });
+  });
+
+  describe('cache functionality', () => {
+    it('should use cached pipeline data when available', async () => {
+      // Arrange
+      const mockPipelinesResponse = {
+        value: [
+          { id: 1, name: 'Pipeline1', folder: 'release' },
+        ],
+      };
+
+      const mockPipelineRunsResponse = {
+        value: [{
+          id: 1,
+          name: 'Pipeline1Run',
+          templateParameters: {
+            env: 'dev',
+          },
+          pipeline: { 
+            id: 1, 
+            name: 'Pipeline1', 
+            folder: 'release' 
+          },
+        }]
+      };
+
+      const mockPipelineRunDetailsResponse = {
+        id: 1,
+        name: 'Pipeline1Run1Details',
+        resources: {
+          pipelines: {
+            ['ci-artifact-pipeline']: {
+              pipeline: {
+                name: 'repo',
+              },
+              version: '1.0.0',
+            }
+          }
+        }
+      };
+
+      const mockGetPipelines = AzureDevOpsClient.getPipelines as jest.Mock;
+      mockGetPipelines.mockImplementation(() => Promise.resolve(mockPipelinesResponse));
+      
+      const mockGetPipelineRuns = AzureDevOpsClient.getPipelineRuns as jest.Mock;
+      mockGetPipelineRuns.mockImplementation(() => Promise.resolve(mockPipelineRunsResponse));
+
+      const mockGetPipelineRunDetails = AzureDevOpsClient.getPipelineRunDetails as jest.Mock;
+      mockGetPipelineRunDetails.mockImplementation(() => Promise.resolve(mockPipelineRunDetailsResponse));
+
+      // Act - First call should hit the API
+      await getReleasedVersions(ENVIRONMENT.DEV);
+
+      // Second call should use cache
+      await getReleasedVersions(ENVIRONMENT.DEV);
+
+      // Assert - getPipelines should only be called once
+      expect(AzureDevOpsClient.getPipelines).toHaveBeenCalledTimes(1);
+    });
+
+    it('should clear cache when clearCache is called', async () => {
+      // Arrange
+      const mockPipelinesResponse = {
+        value: [
+          { id: 1, name: 'Pipeline1', folder: 'release' },
+        ],
+      };
+
+      const mockPipelineRunsResponse = {
+        value: [{
+          id: 1,
+          name: 'Pipeline1Run',
+          templateParameters: {
+            env: 'dev',
+          },
+          pipeline: { 
+            id: 1, 
+            name: 'Pipeline1', 
+            folder: 'release' 
+          },
+        }]
+      };
+
+      const mockPipelineRunDetailsResponse = {
+        id: 1,
+        name: 'Pipeline1Run1Details',
+        resources: {
+          pipelines: {
+            ['ci-artifact-pipeline']: {
+              pipeline: {
+                name: 'repo',
+              },
+              version: '1.0.0',
+            }
+          }
+        }
+      };
+
+      const mockGetPipelines = AzureDevOpsClient.getPipelines as jest.Mock;
+      mockGetPipelines.mockImplementation(() => Promise.resolve(mockPipelinesResponse));
+      
+      const mockGetPipelineRuns = AzureDevOpsClient.getPipelineRuns as jest.Mock;
+      mockGetPipelineRuns.mockImplementation(() => Promise.resolve(mockPipelineRunsResponse));
+
+      const mockGetPipelineRunDetails = AzureDevOpsClient.getPipelineRunDetails as jest.Mock;
+      mockGetPipelineRunDetails.mockImplementation(() => Promise.resolve(mockPipelineRunDetailsResponse));
+
+      // Act - First call should hit the API
+      await getReleasedVersions(ENVIRONMENT.DEV);
+
+      // Clear cache
+      clearCache();
+
+      // Second call should use cache
+      await getReleasedVersions(ENVIRONMENT.DEV);
+
+      // Assert
+      expect(AzureDevOpsClient.getPipelines).toHaveBeenCalledTimes(2);
+    });
+
+    it('should expire cache after TTL period', async () => {
+      // Arrange
+      jest.useFakeTimers();
+
+      const mockPipelinesResponse = {
+        value: [
+          { id: 1, name: 'Pipeline1', folder: 'release' },
+        ],
+      };
+
+      const mockPipelineRunsResponse = {
+        value: [{
+          id: 1,
+          name: 'Pipeline1Run',
+          templateParameters: {
+            env: 'dev',
+          },
+          pipeline: { 
+            id: 1, 
+            name: 'Pipeline1', 
+            folder: 'release' 
+          },
+        }]
+      };
+
+      const mockPipelineRunDetailsResponse = {
+        id: 1,
+        name: 'Pipeline1Run1Details',
+        resources: {
+          pipelines: {
+            ['ci-artifact-pipeline']: {
+              pipeline: {
+                name: 'repo',
+              },
+              version: '1.0.0',
+            }
+          }
+        }
+      };
+
+      const mockGetPipelines = AzureDevOpsClient.getPipelines as jest.Mock;
+      mockGetPipelines.mockImplementation(() => Promise.resolve(mockPipelinesResponse));
+      
+      const mockGetPipelineRuns = AzureDevOpsClient.getPipelineRuns as jest.Mock;
+      mockGetPipelineRuns.mockImplementation(() => Promise.resolve(mockPipelineRunsResponse));
+
+      const mockGetPipelineRunDetails = AzureDevOpsClient.getPipelineRunDetails as jest.Mock;
+      mockGetPipelineRunDetails.mockImplementation(() => Promise.resolve(mockPipelineRunDetailsResponse));
+
+      // Act - First call should hit the API
+      await getReleasedVersions(ENVIRONMENT.DEV);
+
+      // Advance time beyond TTL (5 minutes)
+      jest.advanceTimersByTime(6 * 60 * 1000);
+
+      // Second call should hit the API again due to expired cache
+      await getReleasedVersions(ENVIRONMENT.DEV);
+
+      // Assert
+      expect(AzureDevOpsClient.getPipelines).toHaveBeenCalledTimes(2);
+
+      // Clean up
+      jest.useRealTimers();
+    });
   });
 });
-
-// // Mock config module
-// const mockConfig = {
-//   buildDefinitionFolder: 'release',
-// };
-
-// jest.unstable_mockModule('../../services/configService.js', () => ({
-//   default: mockConfig,
-// }));
-
-// // Mock implementation
-// const mockGetPipelineRuns = jest.fn<() => Promise<PipelineRunResponse>>().mockResolvedValue({ 
-//   value: [] 
-// });
-// const mockGetPipelineRunDetails = jest.fn<() => Promise<PipelineRunDetailResponse>>().mockResolvedValue({
-//   id: 0,
-//   name: '',
-//   pipeline: {
-//     id: 0,
-//     name: '',
-//     folder: '',
-//     url: ''
-//   },
-//   resources: {
-//     pipelines: {}
-//   }
-// } as PipelineRunDetailResponse);
-
-// // Override the imported module
-// jest.mock('../../clients/azureDevOpsClient.js');
-
-// // Import dependencies after setting up mocks
-// const { clearCache, getReleasedVersions } = await import('../azureDevOpsService.js');
-
-// // Mock console.error to prevent test output pollution
-// const originalConsoleError = console.error;
-// console.error = jest.fn() as jest.Mock;
-
-// describe('azureDevOpsService', () => {
-//   beforeEach(() => {
-//     jest.clearAllMocks();
-//     (console.error as jest.Mock).mockClear();
-//     clearCache();
-
-//     // Reset mock config state
-//     mockConfig.buildDefinitionFolder = 'release';
-
-//   });
-
-//   afterAll(() => {
-//     // Restore console.error
-//     console.error = originalConsoleError;
-//   });
-
-//   describe('getReleasedVersions', () => {
-//     it('should throw NotFoundError when no pipelines are found', async () => {
-//       // Arrange
-//       jest
-//         .spyOn(azureDevOpsClient as InstanceType<typeof AzureDevOpsClient>, 'getPipelines')
-//         .mockResolvedValue({ value: [] });
-
-
-//       await expect(azureDevOpsService['getReleasePipelines']()).rejects.toThrow(NotFoundError);
-//       // Act & Assert
-//       // await expect(getReleasedVersions(ENVIRONMENT.DEV)).rejects.toMatchObject({
-//       //   name: 'NotFoundError',
-//       //   statusCode: HttpStatusCode.NOT_FOUND,
-//       //   code: ErrorCode.NOT_FOUND,
-//       //   message: 'No pipelines found'
-//       // });
-//     });
-
-//     it('should throw ExternalAPIError when pipeline fetch fails', async () => {
-//       // Arrange
-//       const error = new Error('Pipeline fetch failed');
-//       azureDevOpsClient.getPipelines.mockImplementation(() => Promise.reject(error));
-
-//       // Act & Assert
-//       await expect(getReleasedVersions('dev')).rejects.toThrow();
-
-//       // Since our implementation now wraps the error twice (once in getReleasePipelines and once in getReleasedVersions),
-//       // we only need to verify that ExternalAPIError was called with the proper parameters at least once
-//       expect(mockExternalAPIError).toHaveBeenCalledWith(
-//         expect.stringContaining('Failed to fetch release pipelines'),
-//         503,
-//         'AZURE_PIPELINE_FETCH_ERROR',
-//         error,
-//       );
-//     });
-
-//     it('should filter pipelines based on folder criteria', async () => {
-//       // Arrange
-//       const mockPipelines = {
-//         value: [
-//           { id: 1, name: 'Pipeline1', folder: 'release/valid' },
-//           { id: 2, name: 'Pipeline2', folder: 'release/automated' }, // should be filtered out
-//           { id: 3, name: 'Pipeline3', folder: 'other/invalid' }, // should be filtered out
-//         ],
-//       };
-
-//       // Need to track which pipeline IDs are used
-//       const validPipelineIds = new Set();
-
-//       azureDevOpsClient.getPipelines.mockResolvedValue(mockPipelines);
-//       azureDevOpsClient.getPipelineRuns.mockImplementation((pipelineId) => {
-//         validPipelineIds.add(pipelineId);
-//         return Promise.resolve({
-//           value: [
-//             {
-//               id: 100 + pipelineId,
-//               templateParameters: { env: 'dev' },
-//               createdDate: '2023-01-01T12:00:00Z',
-//             },
-//           ],
-//         });
-//       });
-
-//       // Mock the pipeline details too to make the test pass all the way through
-//       azureDevOpsClient.getPipelineRunDetails.mockResolvedValue({
-//         name: 'Test Release',
-//         resources: {
-//           pipelines: {
-//             'ci-artifact-pipeline': {
-//               pipeline: {
-//                 name: 'TestRepo',
-//               },
-//               version: '1.0.0',
-//             },
-//           },
-//         },
-//       });
-
-//       // Act
-//       await getReleasedVersions('dev');
-
-//       // Assert
-//       expect(validPipelineIds.has(1)).toBe(true);
-//       expect(validPipelineIds.has(2)).toBe(false);
-//       expect(validPipelineIds.has(3)).toBe(false);
-//     });
-
-//     it('should throw NotFoundError when no release pipelines match criteria', async () => {
-//       // Arrange - make sure mockNotFoundError returns an error we can catch
-//       const notFoundError = new Error('No release pipelines found matching the criteria');
-//       notFoundError.statusCode = 404;
-//       notFoundError.code = 'NOT_FOUND';
-
-//       mockNotFoundError.mockReturnValue(notFoundError);
-
-//       // Set up mock data that will NOT match the criteria
-//       const mockPipelines = {
-//         value: [
-//           { id: 1, name: 'Pipeline1', folder: 'other/invalid' },
-//           { id: 2, name: 'Pipeline2', folder: 'also/invalid' },
-//         ],
-//       };
-
-//       // Make sure the mock correctly returns this data
-//       azureDevOpsClient.getPipelines.mockResolvedValue(mockPipelines);
-
-//       // Set the buildDefinitionFolder to something that won't match our mock data
-//       mockConfig.buildDefinitionFolder = 'release';
-
-//       // Clear cache to ensure we don't get cached results
-//       clearCache();
-
-//       // Act & Assert
-//       await expect(getReleasedVersions('dev')).rejects.toThrow(notFoundError);
-//       expect(mockNotFoundError).toHaveBeenCalledWith(
-//         'No release pipelines found matching the criteria',
-//       );
-//     });
-
-//     it('should process pipeline runs and return formatted released versions', async () => {
-//       // Arrange
-//       const mockPipelines = {
-//         value: [{ id: 1, name: 'ReleasePipeline', folder: 'release/valid' }],
-//       };
-
-//       // Mock pipeline runs with environment-specific data
-//       const mockRuns = {
-//         value: [
-//           {
-//             id: 101,
-//             templateParameters: { env: 'dev' },
-//             createdDate: '2023-01-01T12:00:00Z',
-//           },
-//         ],
-//       };
-
-//       // Mock the run details response that will be returned
-//       const mockRunDetails = {
-//         name: 'Release 1.0.0',
-//         resources: {
-//           pipelines: {
-//             'ci-artifact-pipeline': {
-//               pipeline: { name: 'TestRepo' },
-//               version: '1.0.0',
-//             },
-//           },
-//         },
-//       };
-
-//       // Setup the mock implementations - make sure they actually return the values we need
-//       azureDevOpsClient.getPipelines.mockResolvedValue(mockPipelines);
-//       azureDevOpsClient.getPipelineRuns.mockResolvedValue(mockRuns);
-//       azureDevOpsClient.getPipelineRunDetails.mockResolvedValue(mockRunDetails);
-
-//       // Act
-//       const result = await getReleasedVersions('dev');
-
-//       // Assert - The result should match our expected format
-//       expect(result).toEqual([
-//         {
-//           repo: 'TestRepo',
-//           pipelineName: 'ReleasePipeline',
-//           runName: 'Release 1.0.0',
-//           version: '1.0.0',
-//         },
-//       ]);
-//     });
-
-//     it('should properly handle Promise.allSettled for pipeline runs with some failures', async () => {
-//       // Arrange
-//       const mockPipelines = {
-//         value: [
-//           { id: 1, name: 'Pipeline1', folder: 'release/valid' },
-//           { id: 2, name: 'Pipeline2', folder: 'release/valid' },
-//         ],
-//       };
-
-//       const mockRuns = {
-//         value: [
-//           {
-//             id: 101,
-//             templateParameters: { env: 'dev' },
-//             createdDate: '2023-01-01T12:00:00Z',
-//           },
-//         ],
-//       };
-
-//       const mockRunDetails = {
-//         name: 'Release 1.0.0',
-//         resources: {
-//           pipelines: {
-//             'ci-artifact-pipeline': {
-//               pipeline: { name: 'TestRepo' },
-//               version: '1.0.0',
-//             },
-//           },
-//         },
-//       };
-
-//       azureDevOpsClient.getPipelines.mockResolvedValue(mockPipelines);
-
-//       // First pipeline works, second fails
-//       azureDevOpsClient.getPipelineRuns
-//         .mockImplementationOnce(() => Promise.resolve(mockRuns))
-//         .mockImplementationOnce(() => Promise.reject(new Error('Failed to fetch runs')));
-
-//       azureDevOpsClient.getPipelineRunDetails.mockResolvedValue(mockRunDetails);
-
-//       // Act
-//       const result = await getReleasedVersions('dev');
-
-//       // Assert - Should still return results for the successful pipeline
-//       expect(result.length).toBe(1);
-//       expect(result[0].pipelineName).toBe('Pipeline1');
-//     });
-
-//     it('should return empty array if no valid pipeline runs exist', async () => {
-//       // Arrange
-//       const mockPipelines = {
-//         value: [{ id: 1, name: 'Pipeline1', folder: 'release/valid' }],
-//       };
-
-//       // Empty pipeline runs
-//       azureDevOpsClient.getPipelines.mockResolvedValue(mockPipelines);
-//       azureDevOpsClient.getPipelineRuns.mockResolvedValue({ value: [] });
-
-//       // Act
-//       const result = await getReleasedVersions('dev');
-
-//       // Assert
-//       expect(result).toEqual([]);
-//     });
-//   });
-
-//   describe('cache functionality', () => {
-//     it('should use cached pipeline data when available', async () => {
-//       // Arrange
-//       const mockPipelines = {
-//         value: [{ id: 1, name: 'Pipeline1', folder: 'release/valid' }],
-//       };
-
-//       const mockRuns = {
-//         value: [
-//           {
-//             id: 101,
-//             templateParameters: { env: 'dev' },
-//             createdDate: '2023-01-01T12:00:00Z',
-//           },
-//         ],
-//       };
-
-//       azureDevOpsClient.getPipelines.mockResolvedValue(mockPipelines);
-//       azureDevOpsClient.getPipelineRuns.mockResolvedValue(mockRuns);
-//       azureDevOpsClient.getPipelineRunDetails.mockResolvedValue({
-//         name: 'Release',
-//         resources: {
-//           pipelines: { 'ci-artifact-pipeline': { pipeline: { name: 'Repo' }, version: '1.0' } },
-//         },
-//       });
-
-//       // Act - First call should hit the API
-//       await getReleasedVersions('dev');
-
-//       // Second call should use cache
-//       await getReleasedVersions('dev');
-
-//       // Assert - getPipelines should only be called once
-//       expect(azureDevOpsClient.getPipelines).toHaveBeenCalledTimes(1);
-//     });
-
-//     it('should clear cache when clearCache is called', async () => {
-//       // Arrange
-//       const mockPipelines = {
-//         value: [{ id: 1, name: 'Pipeline1', folder: 'release/valid' }],
-//       };
-
-//       const mockRuns = {
-//         value: [
-//           {
-//             id: 101,
-//             templateParameters: { env: 'dev' },
-//             createdDate: '2023-01-01T12:00:00Z',
-//           },
-//         ],
-//       };
-
-//       azureDevOpsClient.getPipelines.mockResolvedValue(mockPipelines);
-//       azureDevOpsClient.getPipelineRuns.mockResolvedValue(mockRuns);
-//       azureDevOpsClient.getPipelineRunDetails.mockResolvedValue({
-//         name: 'Release',
-//         resources: {
-//           pipelines: { 'ci-artifact-pipeline': { pipeline: { name: 'Repo' }, version: '1.0' } },
-//         },
-//       });
-
-//       // Act - First call should hit the API
-//       await getReleasedVersions('dev');
-
-//       // Clear cache
-//       clearCache();
-
-//       // Second call should hit the API again
-//       await getReleasedVersions('dev');
-
-//       // Assert
-//       expect(azureDevOpsClient.getPipelines).toHaveBeenCalledTimes(2);
-//     });
-
-//     it('should expire cache after TTL period', async () => {
-//       // Arrange
-//       jest.useFakeTimers();
-
-//       const mockPipelines = {
-//         value: [{ id: 1, name: 'Pipeline1', folder: 'release/valid' }],
-//       };
-
-//       const mockRuns = {
-//         value: [
-//           {
-//             id: 101,
-//             templateParameters: { env: 'dev' },
-//             createdDate: '2023-01-01T12:00:00Z',
-//           },
-//         ],
-//       };
-
-//       azureDevOpsClient.getPipelines.mockResolvedValue(mockPipelines);
-//       azureDevOpsClient.getPipelineRuns.mockResolvedValue(mockRuns);
-//       azureDevOpsClient.getPipelineRunDetails.mockResolvedValue({
-//         name: 'Release',
-//         resources: {
-//           pipelines: { 'ci-artifact-pipeline': { pipeline: { name: 'Repo' }, version: '1.0' } },
-//         },
-//       });
-
-//       // Act - First call should hit the API
-//       await getReleasedVersions('dev');
-
-//       // Advance time beyond TTL (5 minutes)
-//       jest.advanceTimersByTime(6 * 60 * 1000);
-
-//       // Second call should hit the API again due to expired cache
-//       await getReleasedVersions('dev');
-
-//       // Assert
-//       expect(azureDevOpsClient.getPipelines).toHaveBeenCalledTimes(2);
-
-//       // Clean up
-//       jest.useRealTimers();
-//     });
-//   });
-// });

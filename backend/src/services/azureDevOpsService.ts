@@ -88,9 +88,7 @@ async function getReleasePipelines(): Promise<Pipeline[]> {
   }
 
   const releasePipelines = pipelines.filter(
-    (pipeline) =>
-      pipeline.folder.includes(config.buildDefinitionFolder) &&
-      !pipeline.folder.toLowerCase().includes('automated'), //todo: remove this at some point to get int releases look into build stages
+    (pipeline) => pipeline.folder === config.buildDefinitionFolder,
   );
 
   if (releasePipelines.length === 0) {
