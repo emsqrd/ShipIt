@@ -15,11 +15,11 @@ jest.mock('../../services/azureDevOpsService.js', () => {
 });
 
 // Import the module after mocking and cast to any to avoid TypeScript errors
-import * as azureDevOpsServiceModule from '../../services/azureDevOpsService.js';
+import AzureDevOpsService from '../../services/azureDevOpsService.js';
 import azureDevOpsRouter from '../azureDevOps.js';
 
 // Cast the imported mock to any to avoid TypeScript errors with mockResolvedValue
-const getReleasedVersions = azureDevOpsServiceModule.getReleasedVersions as any;
+const getReleasedVersionsMock = AzureDevOpsService.getReleasedVersions as jest.Mock;
 
 // Also mock the error handler middleware
 jest.mock('../../middleware/errorHandler.js', () => {
@@ -88,18 +88,19 @@ describe('Azure DevOps Routes', () => {
           version: '1.0.0',
         },
       ];
-      getReleasedVersions.mockResolvedValue(mockReleasedVersions);
-
+      
+      getReleasedVersionsMock.mockImplementation(() => Promise.resolve(mockReleasedVersions));
+      
       const response = await request(app)
         .get(`/api/azure/releasedVersions?environment=${ENVIRONMENT.DEV}`)
         .expect(200);
 
       expect(response.body).toEqual(mockReleasedVersions);
-      expect(getReleasedVersions).toHaveBeenCalledWith(ENVIRONMENT.DEV);
+      expect(getReleasedVersionsMock).toHaveBeenCalledWith(ENVIRONMENT.DEV);
     });
 
     it('should return empty array when no versions are found', async () => {
-      getReleasedVersions.mockResolvedValue([]);
+      getReleasedVersionsMock.mockImplementation(() => Promise.resolve([]));
 
       const response = await request(app)
         .get(`/api/azure/releasedVersions?environment=${ENVIRONMENT.DEV}`)
@@ -120,14 +121,14 @@ describe('Azure DevOps Routes', () => {
         },
       ];
 
-      getReleasedVersions.mockResolvedValue(mockReleasedVersions);
+      getReleasedVersionsMock.mockImplementation(() => Promise.resolve(mockReleasedVersions));
 
       const response = await request(app)
         .get(`/api/azure/releasedVersions?environment=${encodeURIComponent(ENVIRONMENT.DEV)}`)
         .expect(200);
 
       expect(response.body).toEqual(mockReleasedVersions);
-      expect(getReleasedVersions).toHaveBeenCalledWith(ENVIRONMENT.DEV);
+      expect(getReleasedVersionsMock).toHaveBeenCalledWith(ENVIRONMENT.DEV);
     });
 
     it('should handle any valid environment value correctly', async () => {
@@ -143,7 +144,7 @@ describe('Azure DevOps Routes', () => {
         },
       ];
       
-      getReleasedVersions.mockResolvedValue(mockReleasedVersions);
+      getReleasedVersionsMock.mockImplementation(() => Promise.resolve(mockReleasedVersions));
 
       // Test with a sample environment
       const testEnvironment = ENVIRONMENT.DEV;
@@ -152,7 +153,7 @@ describe('Azure DevOps Routes', () => {
         .expect(200);
 
       expect(response.body).toEqual(mockReleasedVersions);
-      expect(getReleasedVersions).toHaveBeenCalledWith(testEnvironment);
+      expect(getReleasedVersionsMock).toHaveBeenCalledWith(testEnvironment);
     });
   });
 });

@@ -12,8 +12,7 @@ import {
   describe,
   expect,
   it,
-  jest,
-  xit
+  jest
 } from '@jest/globals';
 import { HttpMethod } from '../../enums/httpMethod.js';
 
@@ -182,7 +181,7 @@ describe('AzureDevOpsClient', () => {
         });
       });
 
-      xit('should handle network errors with ExternalAPIError', async () => {
+      it('should handle network errors with ExternalAPIError', async () => {
         const networkError = new Error('Network error');
         mockFetch.mockRejectedValue(networkError);
 
