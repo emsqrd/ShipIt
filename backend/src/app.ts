@@ -14,7 +14,6 @@ import { NotFoundError } from './utils/errors.js';
 // Validate configuration before configuring the app
 config.validate();
 
-//TODO: When refactoring this to ts, remove the app.d.ts file
 const app = express();
 
 // Security middleware
