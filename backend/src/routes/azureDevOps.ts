@@ -1,6 +1,6 @@
 import express from 'express';
 
-import { ENVIRONMENT } from '../contracts/environment.js';
+import { ENVIRONMENT } from '../enums/Environment.js';
 import { catchAsync } from '../middleware/errorHandler.js';
 import { getReleasedVersions } from '../services/azureDevOpsService.js';
 import { ReleasedVersion } from '../types/AzureDevOpsTypes.js';

@@ -1,7 +1,7 @@
 import { afterAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { ExternalAPIError, NotFoundError } from '../../utils/errors.js';
 
-import { ENVIRONMENT } from '../../contracts/environment.js';
+import { ENVIRONMENT } from '../../enums/environment.js';
 import { PipelineResponse } from '../../types/AzureDevOpsTypes.js';
 
 // Create a configurable mock object for ConfigService

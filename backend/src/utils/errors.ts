@@ -1,6 +1,6 @@
 // Custom error classes for the application
-import { ErrorCode } from '../types/ErrorCode.js';
-import { HttpStatusCode } from '../types/HttpStatusCode.js';
+import { ErrorCode } from '../enums/ErrorCode.js';
+import { HttpStatusCode } from '../enums/HttpStatusCode.js';
 
 // utility functions for error handling
 export function getErrorMessage(error: unknown): string {

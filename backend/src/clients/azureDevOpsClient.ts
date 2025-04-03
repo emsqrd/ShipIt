@@ -1,12 +1,12 @@
-import { HttpMethod } from '../contracts/httpMethod.js';
+import { ErrorCode } from '../enums/ErrorCode.js';
+import { HttpMethod } from '../enums/HttpMethod.js';
+import { HttpStatusCode } from '../enums/HttpStatusCode.js';
 import config from '../services/configService.js';
 import {
   PipelineResponse,
   PipelineRunDetailResponse,
   PipelineRunResponse,
 } from '../types/AzureDevOpsTypes.js';
-import { ErrorCode } from '../types/ErrorCode.js';
-import { HttpStatusCode } from '../types/HttpStatusCode.js';
 import { ExternalAPIError } from '../utils/errors.js';
 
 const AZURE_API_VERSION = 'api-version=7.1';

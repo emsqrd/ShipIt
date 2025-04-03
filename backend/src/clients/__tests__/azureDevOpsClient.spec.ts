@@ -15,7 +15,7 @@ import {
   jest,
   xit
 } from '@jest/globals';
-import { HttpMethod } from '../../contracts/httpMethod.js';
+import { HttpMethod } from '../../enums/httpMethod.js';
 
 // Mock global fetch
 const mockFetch = jest.fn() as jest.MockedFunction<typeof fetch>;

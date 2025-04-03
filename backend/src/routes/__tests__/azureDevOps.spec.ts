@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import express, { Express } from 'express';
 import request from 'supertest';
-import { ENVIRONMENT } from '../../contracts/environment.js';
+import { ENVIRONMENT } from '../../enums/environment.js';
 import { ReleasedVersion } from '../../types/AzureDevOpsTypes.js';
 
 // Set up mocks for ES modules - with simpler approach to avoid type issues
@@ -81,7 +81,9 @@ describe('Azure DevOps Routes', () => {
       const mockReleasedVersions: ReleasedVersion[] = [
         {
           repo: 'TestRepo',
+          pipelineId: 1,
           pipelineName: 'TestPipeline',
+          runId: 1,
           runName: 'Release 1.0.0',
           version: '1.0.0',
         },
@@ -107,12 +109,16 @@ describe('Azure DevOps Routes', () => {
     });
 
     it('should handle URL-encoded environment parameter', async () => {
-      const mockReleasedVersions: ReleasedVersion[] = [{
-        repo: 'TestRepo', 
-        version: '1.0.0',
-        pipelineName: 'Pipeline 1',
-        runName: 'run'
-      }];
+      const mockReleasedVersions = [
+        {
+          repo: 'TestRepo',
+          pipelineId: 1,
+          pipelineName: 'TestPipeline',
+          runId: 1,
+          runName: 'Release 1.0.0',
+          version: '1.0.0',
+        },
+      ];
 
       getReleasedVersions.mockResolvedValue(mockReleasedVersions);
 
@@ -126,12 +132,16 @@ describe('Azure DevOps Routes', () => {
 
     it('should handle any valid environment value correctly', async () => {
       
-      const mockReleasedVersions: ReleasedVersion[] = [{
-        repo: 'TestRepo', 
-        version: '1.0.0',
-        pipelineName: 'Pipeline 1',
-        runName: 'run'
-      }];
+      const mockReleasedVersions: ReleasedVersion[] = [
+        {
+          repo: 'TestRepo',
+          pipelineId: 1,
+          pipelineName: 'TestPipeline',
+          runId: 1,
+          runName: 'Release 1.0.0',
+          version: '1.0.0',
+        },
+      ];
       
       getReleasedVersions.mockResolvedValue(mockReleasedVersions);
 

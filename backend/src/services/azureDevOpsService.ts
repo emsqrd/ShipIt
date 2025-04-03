@@ -1,8 +1,8 @@
 import azureDevOpsClient from '../clients/azureDevOpsClient.js';
-import { ENVIRONMENT } from '../contracts/environment.js';
+import { ENVIRONMENT } from '../enums/Environment.js';
+import { ErrorCode } from '../enums/ErrorCode.js';
+import { HttpStatusCode } from '../enums/HttpStatusCode.js';
 import { Pipeline, PipelineRun, ReleasedVersion } from '../types/AzureDevOpsTypes.js';
-import { ErrorCode } from '../types/ErrorCode.js';
-import { HttpStatusCode } from '../types/HttpStatusCode.js';
 import {
   AppError,
   ExternalAPIError,
