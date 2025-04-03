@@ -51,6 +51,13 @@ app.use('*', (req, res, next) => {
 });
 
 // Central error handler - must be last middleware
+
+//? Get this to work somehow later?
+// app.use((err: ExtendedError, req: Request, res: Response, next: NextFunction) => {
+//   return errorHandler(err, req, res, next);
+// });
+
+// @ts-expect-error - Express error handler types are complex
 app.use(errorHandler);
 
 export default app;
