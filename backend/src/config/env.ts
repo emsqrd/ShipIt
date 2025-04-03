@@ -6,6 +6,8 @@ import { fileURLToPath } from 'url';
 import { ErrorCode } from '../enums/ErrorCode.js';
 import { AppError } from '../utils/errors.js';
 
+export type NodeEnv = 'development' | 'production';
+
 /**
  * Interface defining the expected environment variables
  */
@@ -14,6 +16,7 @@ export interface Environment {
   AZURE_BASE_URL: string;
   AZURE_PAT: string;
   RELEASE_PIPELINE_FOLDER: string;
+  NODE_ENV: NodeEnv;
 }
 
 const filename = fileURLToPath(import.meta.url);
@@ -53,10 +56,17 @@ if (missingVars.length > 0) {
 process.env.PORT = String(process.env.PORT || 3000);
 process.env.RELEASE_PIPELINE_FOLDER = process.env.RELEASE_PIPELINE_FOLDER || '\\RCT-CD';
 
+const nodeEnv = process.env.NODE_ENV || 'development';
+if (!['development', 'production'].includes(nodeEnv)) {
+  console.warn(`Invalid NODE_ENV: ${nodeEnv} defaulting to 'development'`);
+  process.env.NODE_ENV = 'development';
+}
+
 // Export typed environment variables
 export const env: Environment = {
   PORT: parseInt(process.env.PORT, 10),
   AZURE_BASE_URL: process.env.AZURE_BASE_URL!,
   AZURE_PAT: process.env.AZURE_PAT!,
   RELEASE_PIPELINE_FOLDER: process.env.RELEASE_PIPELINE_FOLDER,
+  NODE_ENV: process.env.NODE_ENV as NodeEnv,
 };
