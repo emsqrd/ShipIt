@@ -29,7 +29,7 @@ export const errorHandler = (
     return next(err);
   }
 
-  // Handle custom application errors with instanceof check and fallback to name check
+  // Handle custom application errors with instanceof check
   if (err instanceof AppError) {
     return res.status(err.statusCode || HttpStatusCode.INTERNAL_SERVER_ERROR).json({
       status: 'error',
@@ -50,16 +50,8 @@ export const errorHandler = (
   });
 };
 
-// Use a more explicit promise-based RequestHandler type
-type AsyncRequestHandler = RequestHandler<
-  Record<string, unknown>,
-  unknown,
-  unknown,
-  Record<string, unknown>
->;
-
 // Middleware to catch async errors
 export const catchAsync =
-  (fn: AsyncRequestHandler) => (req: Request, res: Response, next: NextFunction) => {
-    Promise.resolve(fn(req, res, next)).catch(next);
+  (fn: RequestHandler) => (req: Request, res: Response, next: NextFunction) => {
+    return Promise.resolve(fn(req, res, next)).catch(next);
   };

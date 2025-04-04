@@ -1,10 +1,21 @@
 import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { NextFunction, Request, Response } from 'express';
+import { NextFunction, Request, RequestHandler, Response } from 'express';
 import { env } from '../../config/env.js';
 import { ErrorCode } from '../../enums/ErrorCode.js';
 import { HttpStatusCode } from '../../enums/HttpStatusCode.js';
 import { AppError } from '../../utils/errors.js';
 import { catchAsync, errorHandler } from '../errorHandler.js';
+
+// Custom error class for testing
+class CustomError extends Error {
+  statusCode?: number;
+  
+  constructor(message: string, statusCode?: number) {
+    super(message);
+    this.name = 'CustomError';
+    this.statusCode = statusCode;
+  }
+}
 
 // Mock environment variables
 jest.mock('../../config/env.js', () => ({
@@ -17,16 +28,16 @@ describe('Error Handler Middleware', () => {
   // Mock Express request, response, and next function
   let mockReq: Partial<Request>;
   let mockRes: Partial<Response>;
-  let mockNext: jest.MockedFunction<NextFunction>;
-  let consoleErrorSpy: jest.SpyInstance;
+  let mockNext: NextFunction;
+  let consoleErrorSpy: ReturnType<typeof jest.spyOn>;
 
   beforeEach(() => {
-    mockReq = {};
+    mockReq = {} as Partial<Request>;
     mockRes = {
       status: jest.fn().mockReturnThis(),
       json: jest.fn().mockReturnThis(),
       headersSent: false,
-    };
+    } as Partial<Response>;
     mockNext = jest.fn();
     consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
   });
@@ -34,7 +45,7 @@ describe('Error Handler Middleware', () => {
   afterEach(() => {
     jest.clearAllMocks();
     consoleErrorSpy.mockRestore();
-    (env as any).NODE_ENV = 'development'; // Reset to development after each test
+    env.NODE_ENV = 'development'; // Reset to development after each test
   });
 
   describe('errorHandler function', () => {
@@ -78,11 +89,11 @@ describe('Error Handler Middleware', () => {
 
     it('should use INTERNAL_SERVER_ERROR status code if not provided in AppError', () => {
       // Arrange
-      const appError = new AppError('Error without status code');
-      appError.statusCode = undefined;
+      const customError = new CustomError('Error without status code');
+      customError.statusCode = undefined;
 
       // Act
-      errorHandler(appError, mockReq as Request, mockRes as Response, mockNext);
+      errorHandler(customError, mockReq as Request, mockRes as Response, mockNext);
 
       // Assert
       expect(mockRes.status).toHaveBeenCalledWith(HttpStatusCode.INTERNAL_SERVER_ERROR);
@@ -108,8 +119,7 @@ describe('Error Handler Middleware', () => {
 
     it('should handle error with statusCode property', () => {
       // Arrange
-      const error = new Error('Error with status code') as any;
-      error.statusCode = HttpStatusCode.NOT_FOUND;
+      const error = new CustomError('Error with status code', HttpStatusCode.NOT_FOUND);
 
       // Act
       errorHandler(error, mockReq as Request, mockRes as Response, mockNext);
@@ -131,7 +141,7 @@ describe('Error Handler Middleware', () => {
 
     it('should hide error details in production environment', () => {
       // Arrange
-      (env as any).NODE_ENV = 'production';
+      env.NODE_ENV = 'production';
       const error = new Error('Sensitive error details');
 
       // Act
@@ -172,38 +182,45 @@ describe('Error Handler Middleware', () => {
     it('should catch errors in async route handlers and pass them to next', async () => {
       // Arrange
       const error = new Error('Async error');
-      const asyncHandler = jest.fn().mockRejectedValue(error);
-      const wrappedHandler = catchAsync(asyncHandler as any);
+      const asyncHandler = jest.fn<RequestHandler>().mockImplementation(() => {
+        return Promise.reject(error);
+      })
+      
+      const wrappedHandler = catchAsync(asyncHandler);
 
       // Act
       await wrappedHandler(mockReq as Request, mockRes as Response, mockNext);
-
+      
       // Assert
       expect(asyncHandler).toHaveBeenCalled();
       expect(mockNext).toHaveBeenCalledWith(error);
     });
-
+    
     it('should not catch errors if function resolves successfully', async () => {
       // Arrange
-      const asyncHandler = jest.fn().mockResolvedValue('success');
-      const wrappedHandler = catchAsync(asyncHandler as any);
-
+      const asyncHandler = jest.fn<RequestHandler>().mockImplementation(() => {
+        return Promise.resolve();
+      })
+      const wrappedHandler = catchAsync(asyncHandler);
+      
       // Act
       await wrappedHandler(mockReq as Request, mockRes as Response, mockNext);
-
+      
       // Assert
       expect(asyncHandler).toHaveBeenCalled();
       expect(mockNext).not.toHaveBeenCalled();
     });
-
+    
     it('should call the handler with correct parameters', async () => {
       // Arrange
-      const asyncHandler = jest.fn().mockResolvedValue('success');
-      const wrappedHandler = catchAsync(asyncHandler as any);
-
+      const asyncHandler = jest.fn<RequestHandler>().mockImplementation(() => {
+        return Promise.resolve();
+      })
+      const wrappedHandler = catchAsync(asyncHandler);
+      
       // Act
       await wrappedHandler(mockReq as Request, mockRes as Response, mockNext);
-
+      
       // Assert
       expect(asyncHandler).toHaveBeenCalledWith(mockReq, mockRes, mockNext);
     });

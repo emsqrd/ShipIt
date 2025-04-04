@@ -29,7 +29,6 @@ if (result.error) {
   // Type assertion for file system error
   const fsError = result.error as { code?: string };
   if (fsError.code === 'ENOENT') {
-    // eslint-disable-next-line no-console
     console.info('No .env file found. Using default environment variables.');
   } else {
     throw new AppError(
