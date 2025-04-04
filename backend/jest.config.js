@@ -18,14 +18,13 @@ export default {
   },
   // Collect coverage data from your source files
   collectCoverageFrom: [
-    'src/**/*.js',
     'src/**/*.ts',
     '!src/**/__tests__/**',
-    '!src/index.js',
-    '!src/config/env.js',
-    '!src/app.js',
-    '!src/config/config.js',
-    '!src/contracts/**',
+    '!src/index.ts',
+    '!src/config/env.ts',
+    '!src/app.ts',
+    '!src/config/config.ts',
+    '!src/types/**',
     '!dist/**',
   ],
   // Exclude paths from test discovery entirely
