@@ -41,7 +41,7 @@ router.get(
     //TODO: After azureDevOpsService.js is refactored to ts come back and remove the type assertion
     const releasedVersions: ReleasedVersion[] = await getReleasedVersions(environment);
 
-    res.json(releasedVersions || []);
+    res.json(releasedVersions);
   }),
 );
 

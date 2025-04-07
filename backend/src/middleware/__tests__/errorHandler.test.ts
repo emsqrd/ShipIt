@@ -87,18 +87,6 @@ describe('Error Handler Middleware', () => {
       expect(mockNext).not.toHaveBeenCalled();
     });
 
-    it('should use INTERNAL_SERVER_ERROR status code if not provided in AppError', () => {
-      // Arrange
-      const customError = new CustomError('Error without status code');
-      customError.statusCode = undefined;
-
-      // Act
-      errorHandler(customError, mockReq as Request, mockRes as Response, mockNext);
-
-      // Assert
-      expect(mockRes.status).toHaveBeenCalledWith(HttpStatusCode.INTERNAL_SERVER_ERROR);
-    });
-
     it('should handle regular Error properly', () => {
       // Arrange
       const error = new Error('Standard error');
@@ -160,6 +148,22 @@ describe('Error Handler Middleware', () => {
       );
     });
 
+    it('should set default error message in development environment if not provided', () => {
+      // Arrange
+      env.NODE_ENV = 'development';
+      const error = new Error();
+
+      // Act
+      errorHandler(error, mockReq as Request, mockRes as Response, mockNext);
+
+      // Assert
+      expect(mockRes.json).toHaveBeenCalledWith({
+        status: 'error',
+        message: 'Something went wrong',
+        stack: expect.any(String)
+      });
+    });
+
     it('should include stack trace in development environment', () => {
       // Arrange
       const error = new Error('Error with stack trace');
@@ -172,6 +176,28 @@ describe('Error Handler Middleware', () => {
         expect.objectContaining({
           status: 'error',
           message: 'Error with stack trace',
+          stack: expect.any(String)
+        })
+      );
+    });
+    
+    it('should use default INTERNAL_SERVER_ERROR even when AppError has undefined statusCode', () => {
+      // Arrange
+      // Create an AppError and then force its statusCode to be undefined
+      const appError = new AppError('Error with undefined status code');
+      // @ts-expect-error - intentionally breaking the type to test fallback
+      appError.statusCode = undefined;
+    
+      // Act
+      errorHandler(appError, mockReq as Request, mockRes as Response, mockNext);
+    
+      // Assert
+      expect(mockRes.status).toHaveBeenCalledWith(HttpStatusCode.INTERNAL_SERVER_ERROR);
+      expect(mockRes.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: 'error',
+          message: 'Error with undefined status code',
+          code: ErrorCode.INTERNAL_ERROR,
           stack: expect.any(String)
         })
       );
