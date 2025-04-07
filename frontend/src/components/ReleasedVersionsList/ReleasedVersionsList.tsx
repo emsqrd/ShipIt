@@ -5,7 +5,11 @@ import { fetchReleasedVersions } from '../../services/releasedVersionsService';
 import ReleasedVersionItem from '../ReleasedVersionItem/ReleasedVersionItem';
 import styles from './ReleasedVersionsList.module.css';
 
-const ReleasedVersionsList: React.FC = () => {
+interface ReleasedVersionsListProps {
+  environment: string;
+}
+
+const ReleasedVersionsList: React.FC<ReleasedVersionsListProps> = ({ environment = 'uat' }) => {
   const [releasedVersions, setReleasedVersions] = useState<ReleasedVersion[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -14,7 +18,7 @@ const ReleasedVersionsList: React.FC = () => {
     const loadReleasedVersions = async () => {
       try {
         setIsLoading(true);
-        const data = await fetchReleasedVersions('uat');
+        const data = await fetchReleasedVersions(environment.toLowerCase());
         setReleasedVersions(data);
         setError(null);
       } catch (_) {
@@ -25,7 +29,7 @@ const ReleasedVersionsList: React.FC = () => {
     };
 
     loadReleasedVersions();
-  }, []);
+  }, [environment]);
 
   // Loading skeleton UI
   const loadingSkeletonRows = Array(3)
