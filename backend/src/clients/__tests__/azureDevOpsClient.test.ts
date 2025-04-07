@@ -21,6 +21,8 @@ const mockFetch = jest.fn() as jest.MockedFunction<typeof fetch>;
 global.fetch = mockFetch;
 
 // Import the client AFTER the mocks are set up
+import { ErrorCode } from '../../enums/ErrorCode.js';
+import { HttpStatusCode } from '../../enums/HttpStatusCode.js';
 import { AzureDevOpsClient } from '../azureDevOpsClient.js';
 
 // Helper function to create mock responses
@@ -158,8 +160,8 @@ describe('AzureDevOpsClient', () => {
 
     describe('error handling', () => {
       it('should throw ExternalAPIError when response is not ok', async () => {
-        const errorStatus = 404;
-        const errorText = 'Not Found';
+        const errorStatus = HttpStatusCode.NOT_FOUND;
+        const errorText = ErrorCode.NOT_FOUND;
 
         // Use the helper function for error response
         mockFetch.mockResolvedValue(
@@ -174,19 +176,69 @@ describe('AzureDevOpsClient', () => {
         await expect(client.getPipelines()).rejects.toMatchObject({
           name: 'ExternalAPIError',
           statusCode: errorStatus,
-          code: 'AZURE_API_ERROR',
+          code: ErrorCode.AZURE_API_ERROR,
           message: expect.stringContaining(
             `Azure DevOps API error: ${errorStatus} - Resource not found`,
           ),
         });
       });
 
+      it('should use fallback error text when response.text() fails', async () => {
+        const errorStatus = HttpStatusCode.NOT_FOUND;
+        const errorText = ErrorCode.NOT_FOUND;
+        
+        // Create a mock response where the text() method throws an error
+        const textMock = jest.fn<() => Promise<string>>().mockRejectedValue(new Error('Failed to read response body'));
+        
+        const mockResponse = createMockResponse({
+          ok: false,
+          status: errorStatus,
+          statusText: errorText,
+          text: 'Resource Not Found',
+        });
+
+        mockResponse.text = textMock;
+
+        // Use the helper function for error response
+        mockFetch.mockResolvedValue(mockResponse);
+
+        await expect(client.getPipelines()).rejects.toMatchObject({
+          name: 'ExternalAPIError',
+          statusCode: errorStatus,
+          code: ErrorCode.AZURE_API_ERROR,
+          message: expect.stringContaining('No error details available'),
+        });
+      });
+
       it('should handle network errors with ExternalAPIError', async () => {
-        const networkError = new Error('Network error');
+        const errorMessage = 'Network error';
+
+        const networkError = new Error(errorMessage);
         mockFetch.mockRejectedValue(networkError);
 
-        await expect(client.getPipelines()).rejects.toThrow();
+        await expect(client.getPipelines()).rejects.toMatchObject({
+          name: 'ExternalAPIError',
+          statusCode: HttpStatusCode.SERVICE_UNAVAILABLE,
+          code: ErrorCode.AZURE_CONNECTION_ERROR,
+          message: expect.stringContaining(errorMessage),
+        });
       });
+
+      it('should handle non-Error objects with "Unknown error" message', async () => {
+        // Mock fetch to throw a non-Error object
+        mockFetch.mockImplementationOnce(() => {
+          // This will trigger the condition where error is not an instance of Error
+          throw { someProperty: 'This is not an Error object' };
+        });
+      
+        await expect(client.getPipelines()).rejects.toMatchObject({
+          name: 'ExternalAPIError',
+          statusCode: HttpStatusCode.SERVICE_UNAVAILABLE,
+          code: ErrorCode.AZURE_CONNECTION_ERROR,
+          message: expect.stringContaining('Azure DevOps API request failed: Unknown error'),
+        });
+      });
+
     });
   });
 });

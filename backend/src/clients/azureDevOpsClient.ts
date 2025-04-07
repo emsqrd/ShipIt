@@ -19,7 +19,7 @@ export class AzureDevOpsClient {
   }
 
   //TODO: Move this to a base class when implementing JiraClient
-  async #fetchApi(method: HttpMethod, url: string, body: string | null = null) {
+  async #fetchApi(method: HttpMethod, url: string) {
     type FetchOptions = Parameters<typeof fetch>[1];
 
     const options: FetchOptions = {
@@ -28,7 +28,6 @@ export class AzureDevOpsClient {
         Authorization: `Basic ${config.azurePat}`,
         'Content-Type': 'application/json',
       },
-      ...(body && { body: JSON.stringify(body) }),
     };
 
     try {

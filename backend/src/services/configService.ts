@@ -3,7 +3,7 @@ class ConfigService {
   readonly port: number = Number(process.env.PORT) || 3000;
   readonly azureBaseUrl: string = process.env.AZURE_BASE_URL || '';
   readonly azurePat: string = process.env.AZURE_PAT || '';
-  readonly buildDefinitionFolder: string = process.env.BUILD_DEFINITION_FOLDER || '';
+  readonly buildDefinitionFolder: string = process.env.RELEASE_PIPELINE_FOLDER || '';
 
   validate() {
     if (!this.azureBaseUrl || !this.azurePat) {

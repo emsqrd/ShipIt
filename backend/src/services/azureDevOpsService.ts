@@ -39,7 +39,7 @@ function setCachedData<T>(key: string, data: T, ttl = CACHE_TTL): T {
 }
 
 // Utility function to clear the cache (can be exposed if needed)
-export function clearCache(keyPattern = null) {
+export function clearCache(keyPattern: string | null = null) {
   if (keyPattern) {
     // Clear specific cache entries matching the pattern
     for (const key of cache.keys()) {

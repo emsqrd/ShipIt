@@ -6,6 +6,8 @@ import { fileURLToPath } from 'url';
 import { ErrorCode } from '../enums/ErrorCode.js';
 import { AppError } from '../utils/errors.js';
 
+export type NodeEnv = 'development' | 'production';
+
 /**
  * Interface defining the expected environment variables
  */
@@ -13,7 +15,8 @@ export interface Environment {
   PORT: number;
   AZURE_BASE_URL: string;
   AZURE_PAT: string;
-  BUILD_DEFINITION_FOLDER: string;
+  RELEASE_PIPELINE_FOLDER: string;
+  NODE_ENV: NodeEnv;
 }
 
 const filename = fileURLToPath(import.meta.url);
@@ -26,7 +29,6 @@ if (result.error) {
   // Type assertion for file system error
   const fsError = result.error as { code?: string };
   if (fsError.code === 'ENOENT') {
-    // eslint-disable-next-line no-console
     console.info('No .env file found. Using default environment variables.');
   } else {
     throw new AppError(
@@ -51,12 +53,19 @@ if (missingVars.length > 0) {
 
 // Set default values for optional variables with proper type coercion
 process.env.PORT = String(process.env.PORT || 3000);
-process.env.BUILD_DEFINITION_FOLDER = process.env.BUILD_DEFINITION_FOLDER || '\\RCT-CD';
+process.env.RELEASE_PIPELINE_FOLDER = process.env.RELEASE_PIPELINE_FOLDER || '\\RCT-CD';
+
+const nodeEnv = process.env.NODE_ENV || 'development';
+if (!['development', 'production'].includes(nodeEnv)) {
+  console.warn(`Invalid NODE_ENV: ${nodeEnv} defaulting to 'development'`);
+  process.env.NODE_ENV = 'development';
+}
 
 // Export typed environment variables
 export const env: Environment = {
   PORT: parseInt(process.env.PORT, 10),
   AZURE_BASE_URL: process.env.AZURE_BASE_URL!,
   AZURE_PAT: process.env.AZURE_PAT!,
-  BUILD_DEFINITION_FOLDER: process.env.BUILD_DEFINITION_FOLDER,
+  RELEASE_PIPELINE_FOLDER: process.env.RELEASE_PIPELINE_FOLDER,
+  NODE_ENV: process.env.NODE_ENV as NodeEnv,
 };

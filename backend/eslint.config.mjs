@@ -16,7 +16,7 @@ export default [
     rules: {
       'no-unused-vars': 'warn',
       'no-undef': 'error',
-      'no-console': ['warn', { allow: ['error', 'info'] }],
+      'no-console': ['warn', { allow: ['error', 'info', 'warn'] }],
       'no-restricted-syntax': [
         'error',
         {
@@ -27,7 +27,7 @@ export default [
     },
   },
   {
-    files: ['**/*.spec.js'],
+    files: ['**/*.test.js'],
     languageOptions: {
       globals: {
         ...globals.jest,
