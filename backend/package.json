@@ -2,6 +2,9 @@
   "name": "shipit.api",
   "version": "0.1.0",
   "type": "module",
+  "engines": {
+    "node": "20.x"
+  },
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
