@@ -9,7 +9,7 @@ interface ReleasedVersionsListProps {
   environment: string;
 }
 
-const ReleasedVersionsList: React.FC<ReleasedVersionsListProps> = ({ environment = 'uat' }) => {
+const ReleasedVersionsList: React.FC<ReleasedVersionsListProps> = ({ environment }) => {
   const [releasedVersions, setReleasedVersions] = useState<ReleasedVersion[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
