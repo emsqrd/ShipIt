@@ -1,0 +1,6 @@
+# Because this is a monorepo we need to tell husky 
+# where to find the package.json
+cd backend
+
+npm run build
+npm run test
