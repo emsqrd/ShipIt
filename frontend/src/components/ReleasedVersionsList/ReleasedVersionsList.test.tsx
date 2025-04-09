@@ -8,7 +8,7 @@ import ReleasedVersionsList from './ReleasedVersionsList';
 // Mock the service
 vi.mock('../../services/releasedVersionsService');
 
-function renderReleasedVersionsList(environment = 'DEV') {
+function renderReleasedVersionsList(environment = 'UAT') {
   render(<ReleasedVersionsList environment={environment} />);
 }
 

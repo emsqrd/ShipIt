@@ -52,7 +52,7 @@ describe('ReleasedVersions component', () => {
       render(<ReleasedVersions />);
 
       expect(mocks.mockReleasedVersionsList).toHaveBeenCalledWith(
-        { environment: 'DEV' },
+        { environment: 'UAT' },
         undefined,
       );
     });
@@ -71,7 +71,7 @@ describe('ReleasedVersions component', () => {
       expect(mocks.mockDropdown).toHaveBeenCalledWith(
         {
           options: ['DEV', 'INT', 'UAT', 'PERF1'],
-          selectedOption: 'DEV',
+          selectedOption: 'UAT',
           storageKey: 'selectedEnvironment',
           onOptionChange: expect.any(Function),
         },
@@ -110,16 +110,16 @@ describe('ReleasedVersions component', () => {
 
       render(<ReleasedVersions />);
 
-      // Should fall back to the default (first) environment
+      // Should fall back to the default environment
       expect(mocks.mockReleasedVersionsList).toHaveBeenCalledWith(
-        { environment: 'DEV' },
+        { environment: 'UAT' },
         undefined,
       );
 
       expect(mocks.mockDropdown).toHaveBeenCalledWith(
         {
           options: ['DEV', 'INT', 'UAT', 'PERF1'],
-          selectedOption: 'DEV',
+          selectedOption: 'UAT',
           storageKey: 'selectedEnvironment',
           onOptionChange: expect.any(Function),
         },
@@ -132,9 +132,9 @@ describe('ReleasedVersions component', () => {
 
       render(<ReleasedVersions />);
 
-      // Should use the default (first) environment
+      // Should use the default environment
       expect(mocks.mockReleasedVersionsList).toHaveBeenCalledWith(
-        { environment: 'DEV' },
+        { environment: 'UAT' },
         undefined,
       );
     });

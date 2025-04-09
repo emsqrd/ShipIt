@@ -11,7 +11,7 @@ const ReleasedVersions: React.FC = () => {
 
   const [selectedEnvironment, setSelectedEnvironment] = useState(() => {
     const savedEnv = localStorage.getItem(LOCAL_STORAGE_KEY);
-    return savedEnv && environments.includes(savedEnv) ? savedEnv : environments[0];
+    return savedEnv && environments.includes(savedEnv) ? savedEnv : environments[2];
   });
 
   return (
