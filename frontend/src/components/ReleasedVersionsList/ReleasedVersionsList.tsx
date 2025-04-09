@@ -5,7 +5,11 @@ import { fetchReleasedVersions } from '../../services/releasedVersionsService';
 import ReleasedVersionItem from '../ReleasedVersionItem/ReleasedVersionItem';
 import styles from './ReleasedVersionsList.module.css';
 
-const ReleasedVersionsList: React.FC = () => {
+interface ReleasedVersionsListProps {
+  environment: string;
+}
+
+const ReleasedVersionsList: React.FC<ReleasedVersionsListProps> = ({ environment }) => {
   const [releasedVersions, setReleasedVersions] = useState<ReleasedVersion[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -14,7 +18,7 @@ const ReleasedVersionsList: React.FC = () => {
     const loadReleasedVersions = async () => {
       try {
         setIsLoading(true);
-        const data = await fetchReleasedVersions('uat');
+        const data = await fetchReleasedVersions(environment.toLowerCase());
         setReleasedVersions(data);
         setError(null);
       } catch (_) {
@@ -25,7 +29,7 @@ const ReleasedVersionsList: React.FC = () => {
     };
 
     loadReleasedVersions();
-  }, []);
+  }, [environment]);
 
   // Loading skeleton UI
   const loadingSkeletonRows = Array(3)
@@ -33,7 +37,6 @@ const ReleasedVersionsList: React.FC = () => {
     .map((_, index) => (
       <div
         data-testid="skeleton-loader"
-        role="row"
         className={styles['version-item-skeleton']}
         key={`skeleton-${index}`}
       >
@@ -46,22 +49,14 @@ const ReleasedVersionsList: React.FC = () => {
 
   const renderContent = () => {
     if (isLoading) {
-      return (
-        <div role="rowgroup" className={styles['version-list']}>
-          {loadingSkeletonRows}
-        </div>
-      );
+      return <div className={styles['version-list']}>{loadingSkeletonRows}</div>;
     }
 
     if (error) {
       return (
-        <div
-          data-testid="release-versions-error-message"
-          role="rowgroup"
-          className={styles['error-container']}
-        >
-          <div role="row" className={styles['error-message']}>
-            <span role="cell">
+        <div data-testid="release-versions-error-message" className={styles['error-container']}>
+          <div className={styles['error-message']}>
+            <span>
               <span className={styles['error-icon']}>⚠️</span>
               {error}
             </span>
@@ -72,13 +67,9 @@ const ReleasedVersionsList: React.FC = () => {
 
     if (releasedVersions.length === 0) {
       return (
-        <div data-testid="no-versions-list" role="rowgroup" className={styles['no-version-list']}>
-          <div data-testid="no-versions-list-row" role="row" className={styles['no-version-item']}>
-            <span
-              data-testid="no-versions-list-message"
-              role="cell"
-              className={styles['no-version-text']}
-            >
+        <div data-testid="no-versions-list" className={styles['no-version-list']}>
+          <div data-testid="no-versions-list-row" className={styles['no-version-item']}>
+            <span data-testid="no-versions-list-message" className={styles['no-version-text']}>
               <span className={styles['empty-icon']}>📦</span>
               No released versions available
             </span>
@@ -88,7 +79,7 @@ const ReleasedVersionsList: React.FC = () => {
     }
 
     return (
-      <div role="rowgroup" className={styles['version-list']}>
+      <div className={styles['version-list']}>
         {releasedVersions.map((item) => (
           <ReleasedVersionItem key={item.id} {...item} />
         ))}
@@ -98,26 +89,13 @@ const ReleasedVersionsList: React.FC = () => {
 
   return (
     <div className={styles['container']}>
-      <div
-        data-testid="released-versions-table"
-        role="table"
-        aria-label="Released Versions"
-        className={styles['version-table']}
-      >
-        <div role="rowgroup">
-          <div role="row" className={styles['version-list-header']}>
-            <span role="columnheader" className={styles['repo-column']}>
-              Repo
-            </span>
-            <span role="columnheader" className={styles['pipeline-column']}>
-              Pipeline Name
-            </span>
-            <span role="columnheader" className={styles['run-column']}>
-              Run Name
-            </span>
-            <span role="columnheader" className={styles['version-column']}>
-              Version
-            </span>
+      <div data-testid="released-versions-table" className={styles['version-table']}>
+        <div>
+          <div className={styles['version-list-header']}>
+            <span className={styles['repo-column']}>Repo</span>
+            <span className={styles['pipeline-column']}>Pipeline Name</span>
+            <span className={styles['run-column']}>Run Name</span>
+            <span className={styles['version-column']}>Version</span>
           </div>
         </div>
 

@@ -8,6 +8,10 @@ import ReleasedVersionsList from './ReleasedVersionsList';
 // Mock the service
 vi.mock('../../services/releasedVersionsService');
 
+function renderReleasedVersionsList(environment = 'UAT') {
+  render(<ReleasedVersionsList environment={environment} />);
+}
+
 describe('ReleasedVersionsList', () => {
   // Common test data
   const mockVersions: ReleasedVersion[] = [
@@ -40,7 +44,7 @@ describe('ReleasedVersionsList', () => {
       const pendingPromise = new Promise<ReleasedVersion[]>(() => {});
       vi.mocked(fetchReleasedVersions).mockReturnValue(pendingPromise);
 
-      render(<ReleasedVersionsList />);
+      renderReleasedVersionsList();
 
       expect(screen.getByTestId('released-versions-table')).toBeInTheDocument();
       const skeletonRows = screen.getAllByTestId('skeleton-loader');
@@ -51,7 +55,7 @@ describe('ReleasedVersionsList', () => {
       const expectedEnvironment = 'uat';
       vi.mocked(fetchReleasedVersions).mockResolvedValue(mockVersions);
 
-      render(<ReleasedVersionsList />);
+      renderReleasedVersionsList(expectedEnvironment);
 
       await waitFor(() => {
         expect(fetchReleasedVersions).toHaveBeenCalledTimes(1);
@@ -65,7 +69,7 @@ describe('ReleasedVersionsList', () => {
     it('displays the released versions when data is loaded', async () => {
       vi.mocked(fetchReleasedVersions).mockResolvedValue(mockVersions);
 
-      render(<ReleasedVersionsList />);
+      renderReleasedVersionsList();
 
       await waitFor(() => {
         expect(screen.queryAllByTestId('skeleton-loader').length).toBe(0);
@@ -87,7 +91,7 @@ describe('ReleasedVersionsList', () => {
     it('displays a message when there are no released versions', async () => {
       vi.mocked(fetchReleasedVersions).mockResolvedValue([]);
 
-      render(<ReleasedVersionsList />);
+      renderReleasedVersionsList();
 
       await waitFor(() => {
         expect(screen.queryAllByTestId('skeleton-loader').length).toBe(0);
@@ -101,7 +105,7 @@ describe('ReleasedVersionsList', () => {
     it('displays an error message when the service fails', async () => {
       vi.mocked(fetchReleasedVersions).mockRejectedValue(new Error('API Error'));
 
-      render(<ReleasedVersionsList />);
+      renderReleasedVersionsList();
 
       await waitFor(() => {
         expect(screen.queryAllByTestId('skeleton-loader').length).toBe(0);

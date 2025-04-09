@@ -1,6 +1,6 @@
 .version-item {
   display: grid;
-  grid-template-columns: 300px 350px 1fr 1fr;
+  grid-template-columns: 350px 350px 1fr 1fr;
   padding: 14px 16px;
   border-bottom: 1px solid #333333;
   align-items: center;

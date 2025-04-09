@@ -2,6 +2,6 @@
 export enum ENVIRONMENT {
   DEV = 'dev',
   INT = 'int',
-  PRF = 'perf1',
+  PERF1 = 'perf1',
   UAT = 'uat',
 }

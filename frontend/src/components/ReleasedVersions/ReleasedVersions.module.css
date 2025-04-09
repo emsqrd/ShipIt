@@ -10,8 +10,17 @@
   margin-bottom: 32px;
 }
 
+.header-flex-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
 .version-header {
-  margin: 0 0 8px 0;
+  margin: 0;
   font-size: 2rem;
   font-weight: 700;
   color: #e2e8f0;
@@ -25,6 +34,18 @@
   font-weight: 400;
 }
 
+.environment-selector-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.environment-label {
+  color: #a0aec0;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
 @media (max-width: 768px) {
   .version-container {
     padding: 24px 16px;
@@ -36,5 +57,16 @@
 
   .version-description {
     font-size: 1rem;
+  }
+
+  .header-flex-container {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .environment-selector-container {
+    width: 100%;
+    justify-content: space-between;
   }
 }

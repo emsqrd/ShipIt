@@ -8,17 +8,17 @@ const ReleasedVersionItem: React.FC<ReleasedVersion> = ({
   version,
 }) => {
   return (
-    <div role="row" className={styles['version-item']} aria-label={`${repo} version ${version}`}>
-      <span role="cell" className={styles['repo-column']}>
+    <div className={styles['version-item']}>
+      <span data-testid="repo-column" className={styles['repo-column']}>
         <div className={styles['repo-name']}>{repo}</div>
       </span>
-      <span role="cell" className={styles['pipeline-column']}>
+      <span data-testid="pipeline-column" className={styles['pipeline-column']}>
         <div className={styles['pipeline-name']}>{pipelineName}</div>
       </span>
-      <span role="cell" className={styles['run-column']}>
+      <span data-testid="run-column" className={styles['run-column']}>
         <div className={styles['run-name']}>{runName}</div>
       </span>
-      <span role="cell" className={styles['version-column']}>
+      <span data-testid="version-column" className={styles['version-column']}>
         <div className={styles['version-tag']}>{version}</div>
       </span>
     </div>

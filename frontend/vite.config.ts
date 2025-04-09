@@ -13,6 +13,7 @@ export default defineConfig({
     coverage: {
       exclude: [
         'node_modules/',
+        'dist/',
         'src/setupTests.ts',
         'src/contracts/**',
         '**/*.config.js',
