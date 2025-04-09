@@ -35,7 +35,7 @@ const Dropdown: React.FC<DropdownProps> = ({
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [dropdownRef]);
+  }, []);
 
   const handleOptionChange = (option: string) => {
     onOptionChange(option);
