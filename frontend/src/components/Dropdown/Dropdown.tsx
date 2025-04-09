@@ -59,29 +59,19 @@ const Dropdown: React.FC<DropdownProps> = ({
         onClick={toggleDropdown}
         onKeyDown={handleKeyDown}
         data-testid="dropdown-toggle"
-        aria-haspopup="listbox"
-        aria-expanded={isDropdownOpen}
-        aria-label="Select environment"
       >
         <span data-testid="selected-option">{selectedOption}</span>
         <span className={styles['dropdown-arrow']}>{isDropdownOpen ? '▲' : '▼'}</span>
       </button>
       {isDropdownOpen && (
-        <ul
-          className={styles['dropdown-options']}
-          role="listbox"
-          data-testid="dropdown-options"
-          aria-activedescendant={`env-option-${selectedOption.toLowerCase()}`}
-        >
+        <ul className={styles['dropdown-options']} data-testid="dropdown-options">
           {options.map((option) => (
             <li
               key={option}
               id={`env-option-${option.toLowerCase()}`}
               className={`${styles['dropdown-option']} ${selectedOption === option ? styles['selected'] : ''}`}
               onClick={() => handleOptionChange(option)}
-              role="option"
               data-testid="option"
-              aria-selected={selectedOption === option}
               ref={selectedOption === option ? selectedOptionRef : null}
             >
               {option}
