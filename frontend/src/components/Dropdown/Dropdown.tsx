@@ -37,13 +37,6 @@ const Dropdown: React.FC<DropdownProps> = ({
     };
   }, [dropdownRef]);
 
-  // Scroll the selected option into view when dropdown opens
-  useEffect(() => {
-    if (isDropdownOpen && selectedOptionRef.current) {
-      selectedOptionRef.current.scrollIntoView({ block: 'nearest' });
-    }
-  }, [isDropdownOpen]);
-
   const handleOptionChange = (option: string) => {
     onOptionChange(option);
     setIsDropdownOpen(false);
@@ -60,25 +53,24 @@ const Dropdown: React.FC<DropdownProps> = ({
   };
 
   return (
-    <div
-      className={styles['custom-dropdown-container']}
-      ref={dropdownRef}
-      onKeyDown={handleKeyDown}
-    >
+    <div className={styles['custom-dropdown-container']} ref={dropdownRef} data-testid="dropdown">
       <button
         className={styles['dropdown-toggle']}
         onClick={toggleDropdown}
+        onKeyDown={handleKeyDown}
+        data-testid="dropdown-toggle"
         aria-haspopup="listbox"
         aria-expanded={isDropdownOpen}
         aria-label="Select environment"
       >
-        <span>{selectedOption}</span>
+        <span data-testid="selected-option">{selectedOption}</span>
         <span className={styles['dropdown-arrow']}>{isDropdownOpen ? '▲' : '▼'}</span>
       </button>
       {isDropdownOpen && (
         <ul
           className={styles['dropdown-options']}
           role="listbox"
+          data-testid="dropdown-options"
           aria-activedescendant={`env-option-${selectedOption.toLowerCase()}`}
         >
           {options.map((option) => (
@@ -88,6 +80,7 @@ const Dropdown: React.FC<DropdownProps> = ({
               className={`${styles['dropdown-option']} ${selectedOption === option ? styles['selected'] : ''}`}
               onClick={() => handleOptionChange(option)}
               role="option"
+              data-testid="option"
               aria-selected={selectedOption === option}
               ref={selectedOption === option ? selectedOptionRef : null}
             >
