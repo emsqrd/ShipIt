@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { NextFunction, Request, RequestHandler, Response } from 'express';
 import { env } from '../../config/env';
-import { ErrorCode } from '../../enums/ErrorCode';
-import { HttpStatusCode } from '../../enums/HttpStatusCode';
+import { ErrorCode } from '../../enums/errorCode';
+import { HttpStatusCode } from '../../enums/httpStatusCode';
 import { AppError } from '../../utils/errors';
 import { catchAsync, errorHandler } from '../errorHandler';
 

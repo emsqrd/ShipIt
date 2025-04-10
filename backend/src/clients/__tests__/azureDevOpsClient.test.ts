@@ -21,8 +21,8 @@ const mockFetch = jest.fn() as jest.MockedFunction<typeof fetch>;
 global.fetch = mockFetch;
 
 // Import the client AFTER the mocks are set up
-import { ErrorCode } from '../../enums/ErrorCode';
-import { HttpStatusCode } from '../../enums/HttpStatusCode';
+import { ErrorCode } from '../../enums/errorCode';
+import { HttpStatusCode } from '../../enums/httpStatusCode';
 import { AzureDevOpsClient } from '../azureDevOpsClient';
 
 // Helper function to create mock responses
