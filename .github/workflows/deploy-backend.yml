@@ -47,7 +47,7 @@ jobs:
       - name: Run test with coverage
         working-directory: backend
         run: |
-          npm run test:coverage
+          npm run test
 
       - name: Upload test coverage
         uses: actions/upload-artifact@v4
