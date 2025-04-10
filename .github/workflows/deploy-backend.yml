@@ -26,21 +26,18 @@ jobs:
         with:
           node-version: '20.17.0'
 
-      - name: Install npm dependencies, test, and build
+      - name: Install npm dependencies
         working-directory: backend
         run: |
           npm install
 
       - name: Build backend project
-        working-directory: backend
         run: |
           npm run build
 
       - name: Run test with coverage
         working-directory: backend
         run: |
-          echo "Node version: $(node -v)"
-          echo "NPM version: $(npm -v)"
           npm run test:coverage
 
       - name: Upload test coverage
