@@ -1,10 +1,10 @@
 import express from 'express';
 
-import { ENVIRONMENT } from '../enums/environment.js';
-import { catchAsync } from '../middleware/errorHandler.js';
-import { getReleasedVersions } from '../services/azureDevOpsService.js';
-import { ReleasedVersion } from '../types/AzureDevOpsTypes.js';
-import { RequestValidationError } from '../utils/errors.js';
+import { ENVIRONMENT } from '../enums/environment';
+import { catchAsync } from '../middleware/errorHandler';
+import { getReleasedVersions } from '../services/azureDevOpsService';
+import { ReleasedVersion } from '../types/AzureDevOpsTypes';
+import { RequestValidationError } from '../utils/errors';
 
 // Define type for the expected query parameters
 type ReleasedVersionsQuery = {

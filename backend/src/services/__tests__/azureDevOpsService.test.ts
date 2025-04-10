@@ -1,8 +1,8 @@
 import { afterAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { ExternalAPIError, NotFoundError } from '../../utils/errors.js';
+import { ExternalAPIError, NotFoundError } from '../../utils/errors';
 
-import { ENVIRONMENT } from '../../enums/environment.js';
-import { PipelineResponse } from '../../types/AzureDevOpsTypes.js';
+import { ENVIRONMENT } from '../../enums/environment';
+import { PipelineResponse } from '../../types/AzureDevOpsTypes';
 
 // Create a configurable mock object for ConfigService
 const mockConfig = {
@@ -32,8 +32,8 @@ jest.mock('../configService.js', () => ({
 }));
 
 // Import modules after mocking
-import AzureDevOpsClient from '../../clients/azureDevOpsClient.js';
-import { clearCache, getReleasedVersions } from '../azureDevOpsService.js';
+import AzureDevOpsClient from '../../clients/azureDevOpsClient';
+import { clearCache, getReleasedVersions } from '../azureDevOpsService';
 
 // Mock console.error to prevent test output pollution
 const originalConsoleError = console.error;

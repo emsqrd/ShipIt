@@ -1,13 +1,13 @@
-import { ErrorCode } from '../enums/errorCode.js';
-import { HttpMethod } from '../enums/httpMethod.js';
-import { HttpStatusCode } from '../enums/httpStatusCode.js';
-import config from '../services/configService.js';
+import { ErrorCode } from '../enums/errorCode';
+import { HttpMethod } from '../enums/httpMethod';
+import { HttpStatusCode } from '../enums/httpStatusCode';
+import config from '../services/configService';
 import {
   PipelineResponse,
   PipelineRunDetailResponse,
   PipelineRunResponse,
-} from '../types/AzureDevOpsTypes.js';
-import { ExternalAPIError } from '../utils/errors.js';
+} from '../types/AzureDevOpsTypes';
+import { ExternalAPIError } from '../utils/errors';
 
 const AZURE_API_VERSION = 'api-version=7.1';
 

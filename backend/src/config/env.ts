@@ -3,8 +3,8 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-import { ErrorCode } from '../enums/errorCode.js';
-import { AppError } from '../utils/errors.js';
+import { ErrorCode } from '../enums/errorCode';
+import { AppError } from '../utils/errors';
 
 export type NodeEnv = 'development' | 'production';
 
