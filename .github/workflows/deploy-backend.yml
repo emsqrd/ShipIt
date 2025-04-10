@@ -32,8 +32,17 @@ jobs:
           npm install
 
       - name: Build backend project
+        working-directory: backend
         run: |
+          echo "PWD: $(pwd)"
+          ls -la
           npm run build
+
+      - name: List compiled files
+        working-directory: backend
+        run: |
+          echo "Compiled files matching errorCode:"
+          find dist -type f | grep -i errorcode || echo "No files found"
 
       - name: Run test with coverage
         working-directory: backend
