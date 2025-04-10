@@ -6,7 +6,7 @@ name: Build and deploy Node.js app to Azure Web App - shipit-api
 on:
   push:
     branches:
-      - setup-azure-deployment
+      - master
   workflow_dispatch:
 
 jobs:
