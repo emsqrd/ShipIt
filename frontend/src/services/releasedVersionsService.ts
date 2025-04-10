@@ -1,34 +1,6 @@
 import { ReleasedVersion } from '../contracts/ReleasedVersion';
 
-// Get the API URL from environment variable, ensuring it's properly formatted
-const getApiBaseUrl = (): string => {
-  const envApiUrl = import.meta.env.VITE_SHIP_IT_API_URL;
-
-  // If we have a properly formatted URL from the environment, use it
-  if (
-    envApiUrl &&
-    typeof envApiUrl === 'string' &&
-    (envApiUrl.startsWith('http://') || envApiUrl.startsWith('https://'))
-  ) {
-    return envApiUrl;
-  }
-
-  // If the environment variable is completely missing or improperly formatted,
-  // log an error to help with debugging
-  console.error(
-    'VITE_SHIP_IT_API_URL environment variable is missing or improperly formatted. ' +
-      `VITE_SHIP_IT_API_URL is currently set to ${envApiUrl}` +
-      'API calls may fail. Please ensure it is correctly set in your environment configuration.',
-  );
-
-  // Return whatever value we have (or empty string if undefined)
-  // This will allow the API call to fail naturally with a clear network error
-  // rather than introducing hidden behavior
-  return envApiUrl?.toString() || '';
-};
-
-// Use the function to get the API base URL
-const API_BASE_URL = getApiBaseUrl();
+const API_BASE_URL = import.meta.env.VITE_SHIP_IT_API_URL;
 
 export const fetchReleasedVersions = async (environment: string): Promise<ReleasedVersion[]> => {
   try {
