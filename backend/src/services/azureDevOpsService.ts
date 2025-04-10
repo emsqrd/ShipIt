@@ -1,16 +1,16 @@
-import azureDevOpsClient from '../clients/azureDevOpsClient';
-import { ENVIRONMENT } from '../enums/environment';
-import { ErrorCode } from '../enums/errorCode';
-import { HttpStatusCode } from '../enums/httpStatusCode';
-import { Pipeline, PipelineRun, ReleasedVersion } from '../types/AzureDevOpsTypes';
+import azureDevOpsClient from '../clients/azureDevOpsClient.js';
+import { ENVIRONMENT } from '../enums/environment.js';
+import { ErrorCode } from '../enums/errorCode.js';
+import { HttpStatusCode } from '../enums/httpStatusCode.js';
+import { Pipeline, PipelineRun, ReleasedVersion } from '../types/AzureDevOpsTypes.js';
 import {
   AppError,
   ExternalAPIError,
   NotFoundError,
   getErrorMessage,
   getErrorStatusCode,
-} from '../utils/errors';
-import config from './configService';
+} from '../utils/errors.js';
+import config from './configService.js';
 
 // Cache configuration
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds

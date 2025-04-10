@@ -1,7 +1,7 @@
 // filepath: /Users/emsqrd/git/ShipIt/backend/src/utils/__tests__/errors.test.ts
 import { describe, expect, it } from '@jest/globals';
-import { ErrorCode } from '../../enums/errorCode';
-import { HttpStatusCode } from '../../enums/httpStatusCode';
+import { ErrorCode } from '../../enums/errorCode.js';
+import { HttpStatusCode } from '../../enums/httpStatusCode.js';
 import {
   AppError,
   BadRequestError,
@@ -10,7 +10,7 @@ import {
   RequestValidationError,
   getErrorMessage,
   getErrorStatusCode,
-} from '../errors';
+} from '../errors.js';
 
 describe('Error Utilities', () => {
   describe('getErrorMessage', () => {

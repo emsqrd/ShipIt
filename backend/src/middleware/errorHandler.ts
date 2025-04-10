@@ -1,9 +1,9 @@
 import { NextFunction, Request, RequestHandler, Response } from 'express';
 
-import { env } from '../config/env';
-import { ErrorCode } from '../enums/errorCode';
-import { HttpStatusCode } from '../enums/httpStatusCode';
-import { AppError } from '../utils/errors';
+import { env } from '../config/env.js';
+import { ErrorCode } from '../enums/errorCode.js';
+import { HttpStatusCode } from '../enums/httpStatusCode.js';
+import { AppError } from '../utils/errors.js';
 
 interface ExtendedError extends Error {
   statusCode?: HttpStatusCode | number | undefined;
