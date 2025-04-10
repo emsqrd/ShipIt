@@ -65,4 +65,4 @@ jobs:
         uses: azure/webapps-deploy@v3
         with:
           app-name: 'shipit-api'
-          package: backend
+          package: backend/dist
