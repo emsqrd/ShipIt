@@ -16,6 +16,7 @@ export default {
     '^(\\.{1,2}/.*)\\.js$': '$1',
     '^(\\.{1,2}/.*)\\.ts$': '$1',
   },
+  extensionsToTreatAsEsm: ['.ts'],
   // Collect coverage data from your source files
   collectCoverageFrom: [
     'src/**/*.ts',
