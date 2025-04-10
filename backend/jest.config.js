@@ -13,8 +13,8 @@ export default {
   moduleFileExtensions: ['js', 'ts', 'json'],
   // For ES modules support
   moduleNameMapper: {
-    '^(\\.{1,2}/.*)\\.js$': '$1',
-    '^(\\.{1,2}/.*)\\.ts$': '$1',
+    '(\\.\\.?/.*)\\.js$': '$1',
+    '(\\.\\.?/.*)\\.ts$': '$1',
   },
   // Collect coverage data from your source files
   collectCoverageFrom: [
