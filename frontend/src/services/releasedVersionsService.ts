@@ -17,6 +17,7 @@ const getApiBaseUrl = (): string => {
   // log an error to help with debugging
   console.error(
     'VITE_SHIP_IT_API_URL environment variable is missing or improperly formatted. ' +
+      `VITE_SHIP_IT_API_URL is currently set to ${envApiUrl}` +
       'API calls may fail. Please ensure it is correctly set in your environment configuration.',
   );
 
