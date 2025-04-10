@@ -34,8 +34,6 @@ jobs:
       - name: Build backend project
         working-directory: backend
         run: |
-          echo "PWD: $(pwd)"
-          ls -la
           npm run build
 
       - name: List compiled files
