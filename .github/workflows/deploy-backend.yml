@@ -31,6 +31,22 @@ jobs:
         run: |
           npm install
 
+      - name: Fix case-sensitivity issues
+        working-directory: backend
+        run: |
+          # Ensure only one case version of each file exists
+          find src/enums -type f -name "*.ts" | while read file; do
+            basename=$(basename "$file")
+            lowercase=$(echo "$basename" | tr '[:upper:]' '[:lower:]')
+            if [ "$basename" != "$lowercase" ]; then
+              echo "Normalizing case for $file"
+              git rm --cached "$file"
+              mv -f "$file" "$(dirname "$file")/$lowercase.tmp"
+              mv -f "$(dirname "$file")/$lowercase.tmp" "$(dirname "$file")/$lowercase"
+              git add "$(dirname "$file")/$lowercase"
+            fi
+          done
+
       - name: Build backend project
         working-directory: backend
         run: |
