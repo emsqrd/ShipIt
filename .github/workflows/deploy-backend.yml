@@ -31,21 +31,32 @@ jobs:
         run: |
           npm install
 
-      - name: Fix case-sensitivity issues
+      - name: Check entire directory structure
         working-directory: backend
         run: |
-          # Ensure only one case version of each file exists
-          find src/enums -type f -name "*.ts" | while read file; do
-            basename=$(basename "$file")
-            lowercase=$(echo "$basename" | tr '[:upper:]' '[:lower:]')
-            if [ "$basename" != "$lowercase" ]; then
-              echo "Normalizing case for $file"
-              git rm --cached "$file"
-              mv -f "$file" "$(dirname "$file")/$lowercase.tmp"
-              mv -f "$(dirname "$file")/$lowercase.tmp" "$(dirname "$file")/$lowercase"
-              git add "$(dirname "$file")/$lowercase"
-            fi
+          echo "=== COMPLETE DIRECTORY STRUCTURE ==="
+          find . -type f | sort
+
+          echo "\n=== DETAILED LISTING OF ENUMS DIRECTORY ==="
+          ls -la src/enums/
+
+          echo "\n=== FILE CONTENTS OF ENUM FILES ==="
+          for file in src/enums/*.ts; do
+            echo "\n--- Content of $file ---"
+            cat "$file"
           done
+
+          echo "\n=== GIT STATUS ==="
+          git status
+
+      - name: Show import statements in problematic files
+        working-directory: backend
+        run: |
+          echo "Import statements in problem files:"
+          echo "\nIn azureDevOpsClient.ts:"
+          grep -n "import" src/clients/azureDevOpsClient.ts | head -5
+          echo "\nIn errorHandler.ts:"
+          grep -n "import" src/middleware/errorHandler.ts | head -5
 
       - name: Build backend project
         working-directory: backend
