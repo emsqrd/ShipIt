@@ -11,7 +11,8 @@
     "resolveJsonModule": true,
     "sourceMap": true,
     "lib": ["ES2022", "DOM"],
-    "moduleDetection": "force"
+    "moduleDetection": "force",
+    "types": ["node"]
   },
   "ts-node": {
     "esm": true
