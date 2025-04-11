@@ -1,0 +1,19 @@
+{
+  "name": "shipit-monorepo",
+  "private": true,
+  "version": "1.0.0",
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "prepare": "husky",
+    "frontend:dev": "npm run dev --workspace=frontend",
+    "backend:dev": "npm run dev --workspace=backend",
+    "build": "npm run build --workspaces",
+    "test": "npm run test --workspaces"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7"
+  }
+}
