@@ -10,8 +10,7 @@ import {
   getErrorMessage,
   getErrorStatusCode,
 } from '../utils/errors.js';
-
-//import config from './configService.js';
+import config from './configService.js';
 
 // Cache configuration
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
@@ -88,7 +87,9 @@ async function getReleasePipelines(): Promise<Pipeline[]> {
     throw new NotFoundError('No pipelines found');
   }
 
-  const releasePipelines = pipelines.filter((pipeline) => pipeline.folder === '\\RCT-CD-Automated');
+  const releasePipelines = pipelines.filter(
+    (pipeline) => pipeline.folder === config.manualReleaseDirectory,
+  );
 
   if (releasePipelines.length === 0) {
     throw new NotFoundError('No release pipelines found matching the criteria');
@@ -104,7 +105,7 @@ async function getMostRecentReleasePipelineRunByEnvironment(
 ): Promise<PipelineRun | null> {
   // Get the most recent run for the environment
   const mostRecentPipelineRun = (await azureDevOpsClient.getPipelineRuns(pipelineId)).value
-    // ?.filter((run) => run.templateParameters?.env === environment)
+    ?.filter((run) => run.templateParameters?.env === environment)
     .sort((a, b) => new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime())[0];
 
   if (!mostRecentPipelineRun) {

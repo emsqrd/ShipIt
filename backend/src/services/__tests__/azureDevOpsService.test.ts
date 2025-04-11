@@ -6,7 +6,7 @@ import { PipelineResponse } from '../../types/AzureDevOpsTypes';
 
 // Create a configurable mock object for ConfigService
 const mockConfig = {
-  buildDefinitionFolder: 'release',
+  manualReleaseDirectory: 'release',
   azureBaseUrl: 'https://mock-azure-url',
   azurePat: 'mock-pat',
   port: 3000,
@@ -46,7 +46,7 @@ describe('azureDevOpsService', () => {
     clearCache();
     
     // Reset config mock to default values
-    mockConfig.buildDefinitionFolder = 'release';
+    mockConfig.manualReleaseDirectory = 'release';
   });
 
   afterAll(() => {
@@ -56,8 +56,8 @@ describe('azureDevOpsService', () => {
 
   describe('getReleasedVersions', () => {
     it('should filter pipelines based on folder criteria', async () => {
-      // Set custom buildDefinitionFolder for this test
-      mockConfig.buildDefinitionFolder = 'release';
+      // Set custom manualReleaseDirectory for this test
+      mockConfig.manualReleaseDirectory = 'release';
       
       // Arrange
       const mockPipelinesResponse = {
