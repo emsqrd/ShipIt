@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import express, { Express } from 'express';
 import request from 'supertest';
-import { ENVIRONMENT } from '../../enums/environment.js';
-import { ReleasedVersion } from '../../types/AzureDevOpsTypes.js';
+import { ENVIRONMENT } from '../../enums/environment';
+import { ReleasedVersion } from '../../types/AzureDevOpsTypes';
 
 // Set up mocks for ES modules - with simpler approach to avoid type issues
 jest.mock('../../services/azureDevOpsService.js', () => {
@@ -15,8 +15,8 @@ jest.mock('../../services/azureDevOpsService.js', () => {
 });
 
 // Import the module after mocking and cast to any to avoid TypeScript errors
-import AzureDevOpsService from '../../services/azureDevOpsService.js';
-import azureDevOpsRouter from '../azureDevOps.js';
+import AzureDevOpsService from '../../services/azureDevOpsService';
+import azureDevOpsRouter from '../azureDevOps';
 
 // Cast the imported mock to any to avoid TypeScript errors with mockResolvedValue
 const getReleasedVersionsMock = AzureDevOpsService.getReleasedVersions as jest.Mock;

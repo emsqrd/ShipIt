@@ -1,6 +1,6 @@
 import { ReleasedVersion } from '../contracts/ReleasedVersion';
 
-const API_BASE_URL = 'http://localhost:3000/api';
+const API_BASE_URL = import.meta.env.VITE_SHIP_IT_API_URL;
 
 export const fetchReleasedVersions = async (environment: string): Promise<ReleasedVersion[]> => {
   try {

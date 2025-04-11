@@ -1,4 +1,4 @@
-# Because this is a monorepo we need to tell husky 
+# Because this is a monorepo we need to tell husky
 # where to find the package.json
 cd backend
 

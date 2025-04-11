@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { NextFunction, Request, RequestHandler, Response } from 'express';
-import { env } from '../../config/env.js';
-import { ErrorCode } from '../../enums/ErrorCode.js';
-import { HttpStatusCode } from '../../enums/HttpStatusCode.js';
-import { AppError } from '../../utils/errors.js';
-import { catchAsync, errorHandler } from '../errorHandler.js';
+import { env } from '../../config/env';
+import { ErrorCode } from '../../enums/errorCode';
+import { HttpStatusCode } from '../../enums/httpStatusCode';
+import { AppError } from '../../utils/errors';
+import { catchAsync, errorHandler } from '../errorHandler';
 
 // Custom error class for testing
 class CustomError extends Error {

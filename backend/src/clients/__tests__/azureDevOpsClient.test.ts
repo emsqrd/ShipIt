@@ -14,16 +14,16 @@ import {
   it,
   jest
 } from '@jest/globals';
-import { HttpMethod } from '../../enums/httpMethod.js';
+import { HttpMethod } from '../../enums/httpMethod';
 
 // Mock global fetch
 const mockFetch = jest.fn() as jest.MockedFunction<typeof fetch>;
 global.fetch = mockFetch;
 
 // Import the client AFTER the mocks are set up
-import { ErrorCode } from '../../enums/ErrorCode.js';
-import { HttpStatusCode } from '../../enums/HttpStatusCode.js';
-import { AzureDevOpsClient } from '../azureDevOpsClient.js';
+import { ErrorCode } from '../../enums/errorCode';
+import { HttpStatusCode } from '../../enums/httpStatusCode';
+import { AzureDevOpsClient } from '../azureDevOpsClient';
 
 // Helper function to create mock responses
 function createMockResponse(options: {

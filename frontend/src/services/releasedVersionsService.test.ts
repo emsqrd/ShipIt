@@ -4,7 +4,7 @@ import { ReleasedVersion } from '../contracts/ReleasedVersion';
 import { fetchReleasedVersions } from './releasedVersionsService';
 
 // Constants matching implementation
-const API_BASE_URL = 'http://localhost:3000/api';
+const API_BASE_URL = import.meta.env.VITE_SHIP_IT_API_URL;
 
 // Mock fetch globally
 const mockFetch = vi.fn();

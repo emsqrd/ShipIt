@@ -1,6 +1,6 @@
-import { ErrorCode } from '../enums/ErrorCode.js';
-import { HttpMethod } from '../enums/HttpMethod.js';
-import { HttpStatusCode } from '../enums/HttpStatusCode.js';
+import { ErrorCode } from '../enums/errorCode.js';
+import { HttpMethod } from '../enums/httpMethod.js';
+import { HttpStatusCode } from '../enums/httpStatusCode.js';
 import config from '../services/configService.js';
 import {
   PipelineResponse,
