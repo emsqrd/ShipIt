@@ -24,7 +24,7 @@ describe('ConfigService', () => {
       delete process.env.PORT;
       delete process.env.AZURE_BASE_URL;
       delete process.env.AZURE_PAT;
-      delete process.env.RELEASE_PIPELINE_FOLDER;
+      delete process.env.MANUAL_RELEASE_DIRECTORY;
       
       // Import the module fresh with the current environment variables
       const configService = (await import('../configService.js')).default;
@@ -32,7 +32,7 @@ describe('ConfigService', () => {
       expect(configService.port).toBe(3000);
       expect(configService.azureBaseUrl).toBe('');
       expect(configService.azurePat).toBe('');
-      expect(configService.buildDefinitionFolder).toBe('');
+      expect(configService.manualReleaseDirectory).toBe('');
     });
 
     it('should use environment variable values when set', async () => {
@@ -40,7 +40,7 @@ describe('ConfigService', () => {
       process.env.PORT = '4000';
       process.env.AZURE_BASE_URL = 'https://dev.azure.com/myorg';
       process.env.AZURE_PAT = 'test-pat';
-      process.env.RELEASE_PIPELINE_FOLDER = 'test-folder';
+      process.env.MANUAL_RELEASE_DIRECTORY = 'test-folder';
       
       // Import the module fresh with the current environment variables
       const configService = (await import('../configService.js')).default;
@@ -48,7 +48,7 @@ describe('ConfigService', () => {
       expect(configService.port).toBe(4000);
       expect(configService.azureBaseUrl).toBe('https://dev.azure.com/myorg');
       expect(configService.azurePat).toBe('test-pat');
-      expect(configService.buildDefinitionFolder).toBe('test-folder');
+      expect(configService.manualReleaseDirectory).toBe('test-folder');
     });
   });
 
