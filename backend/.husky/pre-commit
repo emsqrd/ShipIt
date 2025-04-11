@@ -4,5 +4,3 @@ cd backend
 
 npm run build
 npm run test
-
-exit 1
