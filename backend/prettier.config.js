@@ -5,7 +5,7 @@ export default {
   printWidth: 100,
   plugins: ['@trivago/prettier-plugin-sort-imports'],
   importOrder: [
-    './config/env', // Make env.js always first
+    './config/env.js', // Make env.js always first
     '^[^.]', // Third party modules
     '^[./]', // Local imports
   ],
