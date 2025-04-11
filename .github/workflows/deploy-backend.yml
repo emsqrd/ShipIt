@@ -31,48 +31,15 @@ jobs:
         run: |
           npm install
 
-      - name: Check entire directory structure
-        working-directory: backend
-        run: |
-          echo "=== COMPLETE DIRECTORY STRUCTURE ==="
-          find . -type f | sort
-
-          echo "\n=== DETAILED LISTING OF ENUMS DIRECTORY ==="
-          ls -la src/enums/
-
-          echo "\n=== FILE CONTENTS OF ENUM FILES ==="
-          for file in src/enums/*.ts; do
-            echo "\n--- Content of $file ---"
-            cat "$file"
-          done
-
-          echo "\n=== GIT STATUS ==="
-          git status
-
-      - name: Show import statements in problematic files
-        working-directory: backend
-        run: |
-          echo "Import statements in problem files:"
-          echo "\nIn azureDevOpsClient.ts:"
-          grep -n "import" src/clients/azureDevOpsClient.ts | head -5
-          echo "\nIn errorHandler.ts:"
-          grep -n "import" src/middleware/errorHandler.ts | head -5
-
       - name: Build backend project
         working-directory: backend
         run: |
           npm run build
 
-      - name: List compiled files
-        working-directory: backend
-        run: |
-          echo "Compiled files matching errorCode:"
-          find dist -type f | grep -i errorcode || echo "No files found"
-
       - name: Run test with coverage
         working-directory: backend
         run: |
-          npm run test
+          npm run test:coverage
 
       - name: Upload test coverage
         uses: actions/upload-artifact@v4
@@ -85,10 +52,11 @@ jobs:
         with:
           name: backend-build
           path: backend
-
   deploy:
     runs-on: ubuntu-latest
     needs: build
+    # Only run deploy job on pushes to master, not on PRs
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     environment:
       name: 'Production'
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
