@@ -23,6 +23,7 @@ global.fetch = mockFetch;
 // Import the client AFTER the mocks are set up
 import { ErrorCode } from '../../enums/errorCode';
 import { HttpStatusCode } from '../../enums/httpStatusCode';
+import { PipelineResponse, PipelineRunResponse } from '../../types/AzureDevOpsTypes';
 import { AzureDevOpsClient } from '../azureDevOpsClient';
 
 // Helper function to create mock responses
@@ -48,19 +49,9 @@ function createMockResponse(options: {
 describe('AzureDevOpsClient', () => {
   let client: AzureDevOpsClient;
 
-  const mockSuccessResponse = { data: 'test' };
-
   beforeEach(() => {
     client = new AzureDevOpsClient();
     jest.clearAllMocks();
-
-    // Use the helper function for mock response
-    mockFetch.mockResolvedValue(
-      createMockResponse({
-        ok: true,
-        data: mockSuccessResponse,
-      }),
-    );
   });
 
   afterEach(() => {
@@ -80,23 +71,30 @@ describe('AzureDevOpsClient', () => {
   });
 
   describe('API methods', () => {
-    const mockSuccessResponse = { data: 'test' };
     const defaultHeaders = {
       Authorization: `Basic ${mockConfig.azurePat}`,
       'Content-Type': 'application/json',
     };
 
-    beforeEach(() => {
-      // Use the helper function for mock response
-      mockFetch.mockResolvedValue(
-        createMockResponse({
-          ok: true,
-          data: mockSuccessResponse,
-        }),
-      );
-    });
-
     describe('getPipelines', () => {
+      const mockPipelineResponse: PipelineResponse = {
+        value: [{
+          id: 1,
+          name: 'pipeline',
+          folder: 'release',
+          url: 'url',
+        }]
+      };
+
+      beforeEach(() => {
+        mockFetch.mockResolvedValue(
+          createMockResponse({
+            ok: true,
+            data: mockPipelineResponse,
+          }),
+        );
+      });
+
       it('should call fetch with correct URL and method', async () => {
         await client.getPipelines();
 
@@ -109,14 +107,39 @@ describe('AzureDevOpsClient', () => {
         );
       });
 
-      it('should return parsed JSON response', async () => {
+      it('should return PipelineResponse', async () => {
         const result = await client.getPipelines();
-        expect(result).toEqual(mockSuccessResponse);
+        expect(result).toEqual(mockPipelineResponse);
       });
     });
 
     describe('getPipelineRuns', () => {
       const pipelineId = 123;
+      const mockPipelineRunResponse: PipelineRunResponse = {
+        value: [{
+          id: 1,
+          name: 'Pipeline Run 1',
+          templateParameters: {
+              env: 'uat',
+          },
+          createdDate: '06/16/2012',
+          pipeline: {
+              id: 1,
+              name: 'Pipeline 1',
+              folder: 'release',
+              url: 'url',
+          },
+        }],
+      };
+
+      beforeEach(() => {
+        mockFetch.mockResolvedValue(
+          createMockResponse({
+            ok: true,
+            data: mockPipelineRunResponse,
+          }),
+        );
+      });
 
       it('should call fetch with correct URL and method', async () => {
         await client.getPipelineRuns(pipelineId);
@@ -130,15 +153,39 @@ describe('AzureDevOpsClient', () => {
         );
       });
 
-      it('should return parsed JSON response', async () => {
+      it('should return PipelineRunResponse', async () => {
         const result = await client.getPipelineRuns(pipelineId);
-        expect(result).toEqual(mockSuccessResponse);
+        expect(result).toEqual(mockPipelineRunResponse);
       });
     });
 
     describe('getPipelineRunDetails', () => {
       const pipelineId = 123;
       const runId = 456;
+
+      const mockPipelineRunDetailsResponse = {
+        id: 1,
+        name: 'Pipeline1Run1Details',
+        resources: {
+          pipelines: {
+            ['ci-artifact-pipeline']: {
+              pipeline: {
+                name: 'repo',
+              },
+              version: '1.0.0',
+            }
+          }
+        }
+      };
+
+      beforeEach(() => {
+        mockFetch.mockResolvedValue(
+          createMockResponse({
+            ok: true,
+            data: mockPipelineRunDetailsResponse,
+          }),
+        );
+      });
 
       it('should call fetch with correct URL and method', async () => {
         await client.getPipelineRunDetails(pipelineId, runId);
@@ -152,11 +199,53 @@ describe('AzureDevOpsClient', () => {
         );
       });
 
-      it('should return parsed JSON response', async () => {
+      it('should return PipelineRunDetailResponse', async () => {
         const result = await client.getPipelineRunDetails(pipelineId, runId);
-        expect(result).toEqual(mockSuccessResponse);
+        expect(result).toEqual(mockPipelineRunDetailsResponse);
       });
     });
+
+    describe('getBuildTimeline', () => {
+      const buildId = 123;
+      const mockTimelineResponse = {
+        records: [
+          {
+            id: "100",
+            parentId: "1",
+            type: "Stage",
+            name: "EnvDeploy",
+            state: "completed",
+            result: "succeeded"
+          }
+        ],
+      };
+
+      beforeEach(() => {
+        mockFetch.mockResolvedValue(
+          createMockResponse({
+            ok: true,
+            data: mockTimelineResponse,
+          }),
+        );
+      });
+
+      it('should call fetch with correct URL and method', async() => {
+        await client.getBuildTimeline(buildId);
+
+        expect(fetch).toHaveBeenCalledWith(
+          `${mockConfig.azureBaseUrl}/build/builds/${buildId}/timeline?api-version=7.1`,
+          expect.objectContaining({
+            method: HttpMethod.GET,
+            headers: defaultHeaders,
+          }),
+        );
+      });
+
+      it('should return parsed JSON response', async () => {
+        const result = await client.getBuildTimeline(buildId);
+        expect(result).toEqual(mockTimelineResponse);
+      })
+    })
 
     describe('error handling', () => {
       it('should throw ExternalAPIError when response is not ok', async () => {
