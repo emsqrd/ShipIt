@@ -373,8 +373,8 @@ describe('azureDevOpsService', () => {
 
     it('should throw NotFoundError when no release pipelines match criteria', async () => {
 
-      // Set the buildDefinitionFolder to something that won't match our mock data
-      mockConfig.buildDefinitionFolder = 'release';
+      // Set the manualReleaseDirectory to use for filtering
+      mockConfig.manualReleaseDirectory = 'release';
 
       // Set up mock data that will NOT match the criteria
       const mockReleasePipelinesResponse = {

@@ -7,13 +7,14 @@
   },
   "scripts": {
     "clean": "rm -rf dist",
-    "build": "npm run clean && tsc",
+    "build": "npm run clean && tsc && npm run type-check:tests",
     "start": "node dist/index.js",
     "build:start": "npm run build && npm run start",
     "dev": "ts-node-dev --respawn src/index.js",
     "test": "node --experimental-vm-modules node_modules/.bin/jest",
     "test:watch": "node --experimental-vm-modules node_modules/.bin/jest --watch",
     "test:coverage": "node --experimental-vm-modules node_modules/.bin/jest --coverage",
+    "type-check:tests": "tsc --project tsconfig.test.json --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
   },
