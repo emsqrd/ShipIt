@@ -2,7 +2,12 @@ import azureDevOpsClient from '../clients/azureDevOpsClient.js';
 import { ENVIRONMENT } from '../enums/environment.js';
 import { ErrorCode } from '../enums/errorCode.js';
 import { HttpStatusCode } from '../enums/httpStatusCode.js';
-import { Pipeline, PipelineRun, ReleasedVersion } from '../types/AzureDevOpsTypes.js';
+import {
+  BuildTimelineRecord,
+  Pipeline,
+  PipelineRun,
+  ReleasedVersion,
+} from '../types/AzureDevOpsTypes.js';
 import {
   AppError,
   ExternalAPIError,
@@ -73,6 +78,31 @@ async function getPipelines(): Promise<Pipeline[]> {
     console.error('Error fetching pipelines:', error);
     throw new ExternalAPIError(
       `Failed to fetch release pipelines: ${getErrorMessage(error)}`,
+      getErrorStatusCode(error) || HttpStatusCode.SERVICE_UNAVAILABLE,
+      ErrorCode.AZURE_PIPELINE_FETCH_ERROR,
+      error,
+    );
+  }
+}
+
+export async function getBuildTimelineRecords(buildId: number): Promise<BuildTimelineRecord[]> {
+  try {
+    const response = await azureDevOpsClient.getBuildTimeline(buildId);
+
+    const results: BuildTimelineRecord[] = response.records.map((timeline) => ({
+      id: timeline.id,
+      parentId: timeline.parentId,
+      type: timeline.type,
+      name: timeline.name,
+      state: timeline.state,
+      result: timeline.result,
+    }));
+
+    return results.filter((result) => result.parentId === null);
+  } catch (error) {
+    console.error('Error fetching build timeline:', error);
+    throw new ExternalAPIError(
+      `Failed to fetch build pipeline: ${getErrorMessage(error)}`,
       getErrorStatusCode(error) || HttpStatusCode.SERVICE_UNAVAILABLE,
       ErrorCode.AZURE_PIPELINE_FETCH_ERROR,
       error,

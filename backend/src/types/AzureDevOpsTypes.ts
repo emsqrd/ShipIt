@@ -49,17 +49,15 @@ export type PipelineRunDetailResponse = {
   };
 };
 
-export type TimelineResponse = {
-  records: [
-    {
-      id: string;
-      parentId: string;
-      type: string;
-      name: string;
-      state: string;
-      result: string;
-    },
-  ];
+export type BuildTimelineResponse = {
+  records: {
+    id: string;
+    parentId: string;
+    type: string;
+    name: string;
+    state: string;
+    result: string;
+  }[];
 };
 
 // Domain Pipeline Types
@@ -85,7 +83,7 @@ export type PipelineRunDetail = {
   version: string;
 };
 
-export type Timeline = {
+export type BuildTimelineRecord = {
   id: string;
   parentId: string;
   type: string;

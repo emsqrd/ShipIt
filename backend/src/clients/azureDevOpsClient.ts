@@ -3,10 +3,10 @@ import { HttpMethod } from '../enums/httpMethod.js';
 import { HttpStatusCode } from '../enums/httpStatusCode.js';
 import config from '../services/configService.js';
 import {
+  BuildTimelineResponse,
   PipelineResponse,
   PipelineRunDetailResponse,
   PipelineRunResponse,
-  Timeline,
 } from '../types/AzureDevOpsTypes.js';
 import { ExternalAPIError } from '../utils/errors.js';
 
@@ -94,7 +94,7 @@ export class AzureDevOpsClient {
     return await this.#fetchApi(HttpMethod.GET, this.#getPipelineRunDetailsUrl(pipelineId, runId));
   }
 
-  async getBuildTimeline(buildId: number): Promise<Timeline> {
+  async getBuildTimeline(buildId: number): Promise<BuildTimelineResponse> {
     return await this.#fetchApi(HttpMethod.GET, this.#getBuildTimelineUrl(buildId));
   }
 }

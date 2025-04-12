@@ -2,8 +2,8 @@ import express from 'express';
 
 import { ENVIRONMENT } from '../enums/environment.js';
 import { catchAsync } from '../middleware/errorHandler.js';
-import { getReleasedVersions } from '../services/azureDevOpsService.js';
-import { ReleasedVersion } from '../types/AzureDevOpsTypes.js';
+import { getBuildTimelineRecords, getReleasedVersions } from '../services/azureDevOpsService.js';
+import { BuildTimelineRecord, ReleasedVersion } from '../types/AzureDevOpsTypes.js';
 import { RequestValidationError } from '../utils/errors.js';
 
 // Define type for the expected query parameters
@@ -19,6 +19,17 @@ const router = express.Router();
 function isValidEnvironment(value: string): value is ENVIRONMENT {
   return Object.values(ENVIRONMENT).includes(value as ENVIRONMENT);
 }
+
+router.get(
+  '/buildTimeline',
+  catchAsync(async (req, res) => {
+    const { buildId } = req.query as unknown as { buildId: number };
+
+    const buildTimelineRecords: BuildTimelineRecord[] = await getBuildTimelineRecords(buildId);
+
+    res.json(buildTimelineRecords);
+  }),
+);
 
 router.get(
   '/releasedVersions',
