@@ -58,6 +58,70 @@ describe('azureDevOpsService', () => {
 
   describe('getReleasedVersions', () => {
     it('should filter pipelines based on folder criteria', async () => {
+      mockConfig.manualReleaseDirectory = 'release';
+      
+      // Arrange
+      const mockPipelinesResponse = {
+        value: [
+          { id: 1, name: 'Pipeline1', folder: 'release' },
+          { id: 2, name: 'Pipeline2', folder: 'release/path' },
+          { id: 3, name: 'Pipeline3', folder: 'invalid/path' },
+        ],
+      };
+
+      const mockPipelineRunsResponse = {
+        value: [{
+          id: 1,
+          name: 'Pipeline1Run',
+          templateParameters: {
+            env: 'dev',
+          },
+          pipeline: { 
+            id: 1, 
+            name: 'Pipeline1', 
+            folder: 'release' 
+          },
+        }]
+      };
+
+      const mockPipelineRunDetailsResponse = {
+        id: 1,
+        name: 'Pipeline1Run1Details',
+        resources: {
+          pipelines: {
+            ['ci-artifact-pipeline']: {
+              pipeline: {
+                name: 'repo',
+              },
+              version: '1.0.0',
+            }
+          }
+        }
+      };
+
+      const ReleasedVersions = [{
+        repo: 'repo',
+        pipelineId: 1,
+        pipelineName: 'Pipeline1',
+        runId: 1,
+        runName: 'Pipeline1Run',
+        version: '1.0.0'
+      }];
+
+      const mockGetPipelines = AzureDevOpsClient.getPipelines as jest.Mock;
+      mockGetPipelines.mockImplementation(() => Promise.resolve(mockPipelinesResponse));
+      
+      const mockGetPipelineRuns = AzureDevOpsClient.getPipelineRuns as jest.Mock;
+      mockGetPipelineRuns.mockImplementation(() => Promise.resolve(mockPipelineRunsResponse));
+
+      const mockGetPipelineRunDetails = AzureDevOpsClient.getPipelineRunDetails as jest.Mock;
+      mockGetPipelineRunDetails.mockImplementation(() => Promise.resolve(mockPipelineRunDetailsResponse));
+
+      const result = await getReleasedVersions(ENVIRONMENT.DEV);
+      expect(result).toEqual(ReleasedVersions);
+    });
+
+    it('should return automated pipelines if they exist for a repo', async () => {
       // Set custom manualReleaseDirectory for this test
       mockConfig.manualReleaseDirectory = 'manual';
       mockConfig.automatedReleaseDirectory = 'automated';
@@ -157,7 +221,7 @@ describe('azureDevOpsService', () => {
   
       // Mock getBuildTimeline for automated pipeline
       const mockGetBuildTimeline = AzureDevOpsClient.getBuildTimeline as jest.Mock;
-      mockGetBuildTimeline.mockImplementation((runId) => {
+      mockGetBuildTimeline.mockImplementation(() => {
         // Mock a successful DevDeploy stage for Pipeline4
         return Promise.resolve({
           records: [

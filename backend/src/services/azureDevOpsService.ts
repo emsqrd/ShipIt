@@ -238,6 +238,7 @@ export async function getReleasedVersions(environment: ENVIRONMENT): Promise<Rel
       (run): run is PipelineRun => run !== null,
     );
 
+    // Group pipelines by repo name
     const repoGroups = new Map<string, PipelineRun[]>();
 
     for (const run of filteredPipelineRuns) {
@@ -251,7 +252,7 @@ export async function getReleasedVersions(environment: ENVIRONMENT): Promise<Rel
     // For each repo group, select only the most recent run
     const latestRuns: PipelineRun[] = [];
 
-    for (const [_, runs] of repoGroups) {
+    for (const runs of repoGroups.values()) {
       runs.sort((a, b) => new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime());
       latestRuns.push(runs[0]);
     }
