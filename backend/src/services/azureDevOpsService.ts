@@ -104,7 +104,7 @@ export async function getBuildTimelineRecords(buildId: number): Promise<BuildTim
     throw new ExternalAPIError(
       `Failed to fetch build pipeline: ${getErrorMessage(error)}`,
       getErrorStatusCode(error) || HttpStatusCode.SERVICE_UNAVAILABLE,
-      ErrorCode.AZURE_PIPELINE_FETCH_ERROR,
+      ErrorCode.AZURE_BUILD_TIMELINE_RESULTS_ERROR,
       error,
     );
   }
@@ -117,8 +117,12 @@ async function getReleasePipelines(): Promise<Pipeline[]> {
     throw new NotFoundError('No pipelines found');
   }
 
-  const releasePipelines = pipelines.filter(
-    (pipeline) => pipeline.folder === config.manualReleaseDirectory,
+  // Define the release directories we want to filter by
+  const releaseDirectories = [config.manualReleaseDirectory, config.automatedReleaseDirectory];
+
+  // Filter pipelines that have folders matching our release directories
+  const releasePipelines = pipelines.filter((pipeline) =>
+    releaseDirectories.includes(pipeline.folder),
   );
 
   if (releasePipelines.length === 0) {
@@ -132,11 +136,50 @@ async function getReleasePipelines(): Promise<Pipeline[]> {
 async function getMostRecentReleasePipelineRunByEnvironment(
   pipelineId: number,
   environment: ENVIRONMENT,
+  folder: string,
 ): Promise<PipelineRun | null> {
+  let mostRecentPipelineRun;
+
+  const allRuns = (await azureDevOpsClient.getPipelineRuns(pipelineId)).value;
+
+  if (!allRuns || allRuns.length === 0) return null;
+
+  const sortedRuns = allRuns.sort(
+    (a, b) => new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime(),
+  );
+
   // Get the most recent run for the environment
-  const mostRecentPipelineRun = (await azureDevOpsClient.getPipelineRuns(pipelineId)).value
-    ?.filter((run) => run.templateParameters?.env === environment)
-    .sort((a, b) => new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime())[0];
+  if (folder === config.manualReleaseDirectory) {
+    mostRecentPipelineRun = sortedRuns.find((run) => run.templateParameters?.env === environment);
+  } else if (folder === config.automatedReleaseDirectory) {
+    const stageNameMap = new Map<ENVIRONMENT, string>([
+      [ENVIRONMENT.DEV, 'DevDeploy'],
+      [ENVIRONMENT.INT, 'IntDeploy'],
+    ]);
+
+    const stageName = stageNameMap.get(environment);
+    if (!stageName) return null;
+
+    // Find the first run that has a successful deployment stage
+    for (const run of sortedRuns) {
+      try {
+        const buildTimelineRecord = await azureDevOpsClient.getBuildTimeline(run.id);
+
+        // Check if the timeline contains a successful stage with the target name
+        const successfulStage = buildTimelineRecord.records.find(
+          (record) =>
+            record.parentId === null && record.name === stageName && record.result === 'succeeded',
+        );
+
+        if (successfulStage) {
+          mostRecentPipelineRun = run;
+          break; // Found a successful run, stop searching
+        }
+      } catch (error) {
+        console.warn(`Failed to fetch timeline for run ${run.id}:`, error);
+      }
+    }
+  }
 
   if (!mostRecentPipelineRun) {
     return null;
@@ -181,23 +224,47 @@ export async function getReleasedVersions(environment: ENVIRONMENT): Promise<Rel
     const releasePipelines = await getReleasePipelines();
 
     const validPipelineRunPromises = releasePipelines.map(async (pipeline) => {
-      return await getMostRecentReleasePipelineRunByEnvironment(pipeline.id, environment);
+      return await getMostRecentReleasePipelineRunByEnvironment(
+        pipeline.id,
+        environment,
+        pipeline.folder,
+      );
     });
 
     // Wait for all promises to resolve
     const validPipelineRuns = await Promise.all(validPipelineRunPromises);
 
+    const filteredPipelineRuns = validPipelineRuns.filter(
+      (run): run is PipelineRun => run !== null,
+    );
+
+    const repoGroups = new Map<string, PipelineRun[]>();
+
+    for (const run of filteredPipelineRuns) {
+      const repo = run.pipelineRunDetail.repo;
+      if (!repoGroups.has(repo)) {
+        repoGroups.set(repo, []);
+      }
+      repoGroups.get(repo)!.push(run);
+    }
+
+    // For each repo group, select only the most recent run
+    const latestRuns: PipelineRun[] = [];
+
+    for (const [_, runs] of repoGroups) {
+      runs.sort((a, b) => new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime());
+      latestRuns.push(runs[0]);
+    }
+
     // Map the results into the final format
-    const releasedVersions: ReleasedVersion[] = validPipelineRuns
-      .filter((pipelineRun) => pipelineRun !== null)
-      .map((pipelineRun) => ({
-        repo: pipelineRun.pipelineRunDetail.repo,
-        pipelineId: pipelineRun.pipeline.id,
-        pipelineName: pipelineRun.pipeline.name,
-        runId: pipelineRun.id,
-        runName: pipelineRun.name,
-        version: pipelineRun.pipelineRunDetail.version,
-      }));
+    const releasedVersions: ReleasedVersion[] = latestRuns.map((pipelineRun) => ({
+      repo: pipelineRun.pipelineRunDetail.repo,
+      pipelineId: pipelineRun.pipeline.id,
+      pipelineName: pipelineRun.pipeline.name,
+      runId: pipelineRun.id,
+      runName: pipelineRun.name,
+      version: pipelineRun.pipelineRunDetail.version,
+    }));
 
     return releasedVersions;
   } catch (error) {
