@@ -110,6 +110,10 @@ export async function getBuildTimelineRecords(buildId: number): Promise<BuildTim
   }
 }
 
+function filterReleasePipelines(pipelines: Pipeline[], releaseDirectories: string[]): Pipeline[] {
+  return pipelines.filter((pipeline) => releaseDirectories.includes(pipeline.folder));
+}
+
 async function getReleasePipelines(): Promise<Pipeline[]> {
   const pipelines = await getPipelines();
 
@@ -121,9 +125,7 @@ async function getReleasePipelines(): Promise<Pipeline[]> {
   const releaseDirectories = [config.manualReleaseDirectory, config.automatedReleaseDirectory];
 
   // Filter pipelines that have folders matching our release directories
-  const releasePipelines = pipelines.filter((pipeline) =>
-    releaseDirectories.includes(pipeline.folder),
-  );
+  const releasePipelines = filterReleasePipelines(pipelines, releaseDirectories);
 
   if (releasePipelines.length === 0) {
     throw new NotFoundError('No release pipelines found matching the criteria');
@@ -134,13 +136,12 @@ async function getReleasePipelines(): Promise<Pipeline[]> {
 
 // Fetch all runs for one pipeline in a single batch
 async function getMostRecentReleasePipelineRunByEnvironment(
-  pipelineId: number,
+  pipeline: Pipeline,
   environment: ENVIRONMENT,
-  folder: string,
 ): Promise<PipelineRun | null> {
   let mostRecentPipelineRun;
 
-  const allRuns = (await azureDevOpsClient.getPipelineRuns(pipelineId)).value;
+  const allRuns = (await azureDevOpsClient.getPipelineRuns(pipeline.id)).value;
 
   if (!allRuns || allRuns.length === 0) return null;
 
@@ -149,9 +150,9 @@ async function getMostRecentReleasePipelineRunByEnvironment(
   );
 
   // Get the most recent run for the environment
-  if (folder === config.manualReleaseDirectory) {
+  if (pipeline.folder === config.manualReleaseDirectory) {
     mostRecentPipelineRun = sortedRuns.find((run) => run.templateParameters?.env === environment);
-  } else if (folder === config.automatedReleaseDirectory) {
+  } else if (pipeline.folder === config.automatedReleaseDirectory) {
     const stageNameMap = new Map<ENVIRONMENT, string>([
       [ENVIRONMENT.DEV, 'DevDeploy'],
       [ENVIRONMENT.INT, 'IntDeploy'],
@@ -186,7 +187,7 @@ async function getMostRecentReleasePipelineRunByEnvironment(
   }
 
   const pipelineRunDetails = await azureDevOpsClient.getPipelineRunDetails(
-    mostRecentPipelineRun.pipeline.id,
+    pipeline.id,
     mostRecentPipelineRun.id,
   );
 
@@ -201,13 +202,10 @@ async function getMostRecentReleasePipelineRunByEnvironment(
   return {
     id: mostRecentPipelineRun.id,
     name: mostRecentPipelineRun.name,
+    pipelineId: pipeline.id,
+    pipelineName: pipeline.name,
     environment: mostRecentPipelineRun.templateParameters?.env,
     createdDate: mostRecentPipelineRun.createdDate,
-    pipeline: {
-      id: mostRecentPipelineRun.pipeline?.id,
-      name: mostRecentPipelineRun.pipeline?.name,
-      folder: mostRecentPipelineRun.pipeline?.folder,
-    },
     pipelineRunDetail: {
       id: pipelineRunDetails.id,
       name: pipelineRunDetails.name,
@@ -224,11 +222,7 @@ export async function getReleasedVersions(environment: ENVIRONMENT): Promise<Rel
     const releasePipelines = await getReleasePipelines();
 
     const validPipelineRunPromises = releasePipelines.map(async (pipeline) => {
-      return await getMostRecentReleasePipelineRunByEnvironment(
-        pipeline.id,
-        environment,
-        pipeline.folder,
-      );
+      return await getMostRecentReleasePipelineRunByEnvironment(pipeline, environment);
     });
 
     // Wait for all promises to resolve
@@ -260,8 +254,8 @@ export async function getReleasedVersions(environment: ENVIRONMENT): Promise<Rel
     // Map the results into the final format
     const releasedVersions: ReleasedVersion[] = latestRuns.map((pipelineRun) => ({
       repo: pipelineRun.pipelineRunDetail.repo,
-      pipelineId: pipelineRun.pipeline.id,
-      pipelineName: pipelineRun.pipeline.name,
+      pipelineId: pipelineRun.pipelineId,
+      pipelineName: pipelineRun.pipelineName,
       runId: pipelineRun.id,
       runName: pipelineRun.name,
       version: pipelineRun.pipelineRunDetail.version,
@@ -284,6 +278,10 @@ export async function getReleasedVersions(environment: ENVIRONMENT): Promise<Rel
     );
   }
 }
+
+export const __test__ = {
+  filterReleasePipelines,
+};
 
 export default {
   getReleasedVersions,

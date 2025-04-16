@@ -1,8 +1,24 @@
-import { afterAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
+import { afterAll, afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { ExternalAPIError, NotFoundError } from '../../utils/errors';
 
 import { ENVIRONMENT } from '../../enums/environment';
-import { PipelineResponse } from '../../types/AzureDevOpsTypes';
+import { BuildTimelineResponse, PipelineResponse, PipelineRunDetailResponse, PipelineRunResponse } from '../../types/AzureDevOpsTypes';
+
+// Define a test-specific version of PipelineRunDetailResponse that handles all possible structures
+type TestPipelineRunDetailResponse = {
+  id: number;
+  name: string;
+  resources: {
+    pipelines: {
+      ['ci-artifact-pipeline']?: {
+        pipeline: {
+          name: string | undefined;
+        };
+        version: string | undefined;
+      };
+    };
+  };
+};
 
 // Create a configurable mock object for ConfigService
 const mockConfig = {
@@ -14,7 +30,13 @@ const mockConfig = {
   validate: jest.fn()
 };
 
-// Mock the module first, before any imports that might use it
+// Mock the configService module to return our configurable mockConfig object
+jest.mock('../configService.js', () => ({
+  __esModule: true,
+  default: mockConfig
+}));
+
+// Mock the AzureDevOpsClient first, before any imports that might use it
 jest.mock('../../clients/azureDevOpsClient.js', () => {
   return {
     __esModule: true,
@@ -27,15 +49,154 @@ jest.mock('../../clients/azureDevOpsClient.js', () => {
   };
 });
 
-// Mock the configService module to return our configurable mockConfig object
-jest.mock('../configService.js', () => ({
-  __esModule: true,
-  default: mockConfig
-}));
-
 // Import modules after mocking
 import AzureDevOpsClient from '../../clients/azureDevOpsClient';
-import { clearCache, getReleasedVersions } from '../azureDevOpsService';
+import { __test__, clearCache, getReleasedVersions } from '../azureDevOpsService';
+
+/**
+ * Mock reference to allow calling mockClear() directly
+ */
+const mockGetPipelinesRef = AzureDevOpsClient.getPipelines as jest.Mock;
+
+/**
+ * Mocks the AzureDevOpsClient.getPipelines call to return the specified pipeline response
+ * @param mockPipelineResponse The mock pipeline response to return
+ * @returns The mocked getPipelines function
+ */
+const mockPipelineResponse = (mockPipelineResponse: PipelineResponse) => {
+  mockGetPipelinesRef.mockImplementation(() => Promise.resolve(mockPipelineResponse));
+  return mockGetPipelinesRef;
+};
+
+/**
+ * Mocks the AzureDevOpsClient.getPipelineRuns call to return the specified pipeline runs response
+ * @param mockPipelineRunsResponse The mock pipeline runs response to return
+ * @returns The mocked getPipelineRuns function
+ */
+const mockPipelineRunsResponse = (mockPipelineRunsResponse: PipelineRunResponse) => {
+  const mockGetPipelineRuns = AzureDevOpsClient.getPipelineRuns as jest.Mock;
+  mockGetPipelineRuns.mockImplementation(() => Promise.resolve(mockPipelineRunsResponse));
+  return mockGetPipelineRuns;
+};
+
+/**
+ * Mocks the AzureDevOpsClient.getPipelineRunDetails call to return different responses based on run ID
+ * @param runDetailsMap An object map where keys are run IDs and values are the corresponding mock responses
+ * @returns The mocked getPipelineRunDetails function
+ */
+const mockPipelineRunDetailsResponses = (runDetailsMap: Record<number, TestPipelineRunDetailResponse>) => {
+  const mockGetPipelineRunDetails = AzureDevOpsClient.getPipelineRunDetails as jest.Mock;
+  mockGetPipelineRunDetails.mockImplementation((...args: unknown[]) => {
+    // Extract runId from arguments (second argument)
+    const runId = args[1] as number;
+    if (runId in runDetailsMap) {
+      return Promise.resolve(runDetailsMap[runId] as PipelineRunDetailResponse);
+    }
+    return Promise.reject(new Error(`No mock response configured for run ID: ${runId}`));
+  });
+  return mockGetPipelineRunDetails;
+};
+
+/**
+ * Mocks the AzureDevOpsClient.getBuildTimeline call to return the specified build timeline response
+ * @param mockBuildTimelineResponse The mock build timeline response to return
+ * @returns The mocked getBuildTimeline function
+ */
+const mockBuildTimelineResponse = (mockBuildTimelineResponse: BuildTimelineResponse) => {
+  const mockGetBuildTimeline = AzureDevOpsClient.getBuildTimeline as jest.Mock;
+  mockGetBuildTimeline.mockImplementation(() => Promise.resolve(mockBuildTimelineResponse));
+  return mockGetBuildTimeline;
+};
+
+// Mock data factories
+const createMockPipeline = (id: number, name: string, folder: string) => ({
+  id, 
+  name, 
+  folder,
+});
+
+const createMockPipelineRun = (id: number, name: string, env: string, createdDate: string, pipelineId: number, pipelineName: string, pipelineFolder: string) => ({
+  id,
+  name,
+  createdDate,
+  templateParameters: { env },
+  pipeline: {
+    id: pipelineId,
+    name: pipelineName,
+    folder: pipelineFolder
+  }
+});
+
+const createMockPipelineRunDetails = (
+  id: number, 
+  name: string, 
+  repoName?: string, 
+  version?: string, 
+  includeArtifactPipeline: boolean = true
+) => ({
+  id,
+  name,
+  resources: {
+    pipelines: includeArtifactPipeline ? {
+      ['ci-artifact-pipeline']: {
+        pipeline: {
+          name: repoName,
+        },
+        version,
+      }
+    } : {}
+  }
+});
+
+const createMockBuildTimeline = (id: string, name: string) => ({
+  id,
+  parentId: null,
+  type: "Stage",
+  name,
+  state: "completed",
+  result: "succeeded",
+});
+
+const createMockReleasedVersion = (repo: string, pipelineId: number, pipelineName: string, runId: number, runName: string) => ({
+  repo,
+  pipelineId,
+  pipelineName,
+  runId,
+  runName,
+  version: '1.0.0',
+});
+
+// Common test fixtures
+const mockPipelineFixtures = {
+  manualReleasePipeline: createMockPipeline(1, 'Pipeline1', 'manual'),
+  invalidPathPipeline: createMockPipeline(3, 'Pipeline3', 'invalid/path'),
+  automatedReleasePipeline: createMockPipeline(4, 'Pipeline4', 'automated'),
+};
+
+const mockPipelineRunFixtures = {
+  manualPipelineRun: createMockPipelineRun(1, 'Pipeline1Run1', 'dev', '01-01-2024', 1, 'Pipeline1', 'manual'),
+  newerManualPipelineRun: createMockPipelineRun(2, 'Pipeline1Run2', 'dev', '01-01-2025', 1, 'Pipeline1', 'manual'),
+  automatedPipelineRun: createMockPipelineRun(4, 'Pipeline4Run4', '', '01-01-2025', 4, 'Pipeline4', 'automated'),
+  invalidEnvPipelineRun: createMockPipelineRun(1, 'Pipeline4Run4', 'dev1', '01-01-2025', 1, 'Pipeline1', 'manual'),
+};
+
+const mockPipelineRunDetailsFixtures = {
+  manualPipelineRunDetails: createMockPipelineRunDetails(1, 'Pipeline1Run1Details', 'repo1', '1.0.0'),
+  newerManualPipelineRunDetails: createMockPipelineRunDetails(2, 'Pipeline1Run2', 'repo1', '1.0.0'),
+  automatedPipelineRunDetails: createMockPipelineRunDetails(4, 'Pipeline4Run4Details', 'repo4', '1.0.0'),
+  missingArtifactPipelineRunDetails: createMockPipelineRunDetails(1, 'Pipeline1Run1Details', 'repo1', '1.0.0', false),
+};
+
+const mockBuildTimelineFixtures = {
+  devDeploy: createMockBuildTimeline('1', 'DevDeploy'),
+  intDeploy: createMockBuildTimeline('2', 'IntDeploy'),
+}
+
+const mockReleasedVersionsFixtures = {
+  pipeline1Run1Repo1: createMockReleasedVersion('repo1', 1, 'Pipeline1', 1, 'Pipeline1Run1'),
+  pipeline1Run2Repo1: createMockReleasedVersion('repo1', 1, 'Pipeline1', 2, 'Pipeline1Run2'),
+  pipeline4Run4Repo4: createMockReleasedVersion('repo4', 4, 'Pipeline4', 4, 'Pipeline4Run4'),
+}
 
 // Mock console.error to prevent test output pollution
 const originalConsoleError = console.error;
@@ -48,304 +209,95 @@ describe('azureDevOpsService', () => {
     clearCache();
     
     // Reset config mock to default values
-    mockConfig.manualReleaseDirectory = 'release';
+    mockConfig.manualReleaseDirectory = 'manual';
+    mockConfig.automatedReleaseDirectory = 'automated';
   });
+
+  afterEach(() => {
+    jest.resetAllMocks();
+  })
 
   afterAll(() => {
     // Restore console.error
     console.error = originalConsoleError;
   });
 
-  describe('getReleasedVersions', () => {
-    it('should filter pipelines based on folder criteria', async () => {
-      mockConfig.manualReleaseDirectory = 'release';
+  describe ('internal functionality', () => {
+    it('should filter pipelines based on folder criteria', async() => {
+
+      const mockPipelines = [
+        mockPipelineFixtures.manualReleasePipeline,
+        mockPipelineFixtures.invalidPathPipeline,
+      ];
+
+      const releaseDirectories = ['manual'];
       
-      // Arrange
-      const mockPipelinesResponse = {
-        value: [
-          { id: 1, name: 'Pipeline1', folder: 'release' },
-          { id: 2, name: 'Pipeline2', folder: 'release/path' },
-          { id: 3, name: 'Pipeline3', folder: 'invalid/path' },
-        ],
-      };
-
-      const mockPipelineRunsResponse = {
-        value: [{
-          id: 1,
-          name: 'Pipeline1Run',
-          templateParameters: {
-            env: 'dev',
-          },
-          pipeline: { 
-            id: 1, 
-            name: 'Pipeline1', 
-            folder: 'release' 
-          },
-        }]
-      };
-
-      const mockPipelineRunDetailsResponse = {
-        id: 1,
-        name: 'Pipeline1Run1Details',
-        resources: {
-          pipelines: {
-            ['ci-artifact-pipeline']: {
-              pipeline: {
-                name: 'repo',
-              },
-              version: '1.0.0',
-            }
-          }
-        }
-      };
-
-      const ReleasedVersions = [{
-        repo: 'repo',
-        pipelineId: 1,
-        pipelineName: 'Pipeline1',
-        runId: 1,
-        runName: 'Pipeline1Run',
-        version: '1.0.0'
-      }];
-
-      const mockGetPipelines = AzureDevOpsClient.getPipelines as jest.Mock;
-      mockGetPipelines.mockImplementation(() => Promise.resolve(mockPipelinesResponse));
-      
-      const mockGetPipelineRuns = AzureDevOpsClient.getPipelineRuns as jest.Mock;
-      mockGetPipelineRuns.mockImplementation(() => Promise.resolve(mockPipelineRunsResponse));
-
-      const mockGetPipelineRunDetails = AzureDevOpsClient.getPipelineRunDetails as jest.Mock;
-      mockGetPipelineRunDetails.mockImplementation(() => Promise.resolve(mockPipelineRunDetailsResponse));
-
-      const result = await getReleasedVersions(ENVIRONMENT.DEV);
-      expect(result).toEqual(ReleasedVersions);
+      const result = __test__.filterReleasePipelines(mockPipelines, releaseDirectories);
+      expect(result).toEqual([
+        mockPipelineFixtures.manualReleasePipeline,
+      ]);
     });
+  })
 
+  describe('getReleasedVersions', () => {
     it('should return automated pipelines if they exist for a repo', async () => {
-      // Set custom manualReleaseDirectory for this test
-      mockConfig.manualReleaseDirectory = 'manual';
-      mockConfig.automatedReleaseDirectory = 'automated';
-      
       // Arrange
-      const mockPipelinesResponse = {
+      const mockPipelines = {
         value: [
-          { id: 1, name: 'Pipeline1', folder: 'manual' },
-          { id: 2, name: 'Pipeline2', folder: 'manual/path' },
-          { id: 3, name: 'Pipeline3', folder: 'invalid/path' },
-          { id: 4, name: 'Pipeline4', folder: 'automated'},
+          mockPipelineFixtures.manualReleasePipeline,
+          mockPipelineFixtures.automatedReleasePipeline,
         ],
       };
-
-      const mockPipelineRunsResponse = {
+    
+      const mockPipelineRuns = {
         value: [
-          {
-            id: 1,
-            name: 'Pipeline1Run',
-            createdDate: '01-01-2024',
-            templateParameters: {
-              env: 'dev',
-            },
-            pipeline: { 
-              id: 1, 
-              name: 'Pipeline1', 
-              folder: 'manual' 
-            },
-          },
-          {
-            id: 4,
-            name: 'Pipeline4Run',
-            createdDate: '01-01-2025',
-            pipeline: { 
-              id: 4, 
-              name: 'Pipeline4', 
-              folder: 'automated' 
-            },
-          }
+          mockPipelineRunFixtures.manualPipelineRun,
+          mockPipelineRunFixtures.automatedPipelineRun
         ]
       };
 
-      const mockPipelineRunDetails1Response = {
-        id: 1,
-        name: 'Pipeline1Run1Details',
-        resources: {
-          pipelines: {
-            ['ci-artifact-pipeline']: {
-              pipeline: {
-                name: 'repo1',
-              },
-              version: '1.0.0',
-            }
-          }
-        }
+      // Create a map of run IDs to their corresponding pipeline run details
+      const runDetailsMap = {
+        1: mockPipelineRunDetailsFixtures.manualPipelineRunDetails,
+        4: mockPipelineRunDetailsFixtures.automatedPipelineRunDetails
       };
 
-      const mockPipelineRunDetails4Response = {
-        id: 1,
-        name: 'Pipeline4Run1Details',
-        resources: {
-          pipelines: {
-            ['ci-artifact-pipeline']: {
-              pipeline: {
-                name: 'repo4',
-              },
-              version: '1.0.0',
-            }
-          }
-        }
+      const mockBuildTimeline = {
+        records: [
+          mockBuildTimelineFixtures.devDeploy
+        ]
       };
 
-      const ReleasedVersions = [
-        {
-          repo: 'repo1',
-          pipelineId: 1,
-          pipelineName: 'Pipeline1',
-          runId: 1,
-          runName: 'Pipeline1Run',
-          version: '1.0.0'
-        },
-        {
-          repo: 'repo4',
-          pipelineId: 4,
-          pipelineName: 'Pipeline4',
-          runId: 4,
-          runName: 'Pipeline4Run',
-          version: '1.0.0'
-        }
-    ];
+      const releasedVersions = [
+        mockReleasedVersionsFixtures.pipeline1Run1Repo1,
+        mockReleasedVersionsFixtures.pipeline4Run4Repo4,
+      ];
 
-      const mockGetPipelines = AzureDevOpsClient.getPipelines as jest.Mock;
-      mockGetPipelines.mockImplementation(() => Promise.resolve(mockPipelinesResponse));
+      // Use the helper functions to set up the mocks
+      mockPipelineResponse(mockPipelines);
+      mockPipelineRunsResponse(mockPipelineRuns);
+      mockPipelineRunDetailsResponses(runDetailsMap);
+      mockBuildTimelineResponse(mockBuildTimeline);
       
-      const mockGetPipelineRuns = AzureDevOpsClient.getPipelineRuns as jest.Mock;
-      mockGetPipelineRuns.mockImplementation(() => Promise.resolve(mockPipelineRunsResponse));
-  
-      // Mock getBuildTimeline for automated pipeline
-      const mockGetBuildTimeline = AzureDevOpsClient.getBuildTimeline as jest.Mock;
-      mockGetBuildTimeline.mockImplementation(() => {
-        // Mock a successful DevDeploy stage for Pipeline4
-        return Promise.resolve({
-          records: [
-            {
-              id: "1",
-              parentId: null,
-              type: "Stage",
-              name: "DevDeploy",
-              state: "completed",
-              result: "succeeded"
-            }
-          ]
-        });
-      });
-      
-      const mockGetPipelineRunDetails = AzureDevOpsClient.getPipelineRunDetails as jest.Mock;
-      mockGetPipelineRunDetails.mockImplementation((pipelineId) => {
-        // Return different responses based on the pipeline ID
-        if (pipelineId === 1) {
-          return Promise.resolve(mockPipelineRunDetails1Response);
-        } else if (pipelineId === 4) {
-          return Promise.resolve(mockPipelineRunDetails4Response);
-        }
-        return Promise.reject(new Error(`Unexpected pipeline ID: ${pipelineId}`));
-      });
-
+      // Act
       const result = await getReleasedVersions(ENVIRONMENT.DEV);
-      expect(result).toEqual(ReleasedVersions);
+      
+      // Assert
+      expect(result).toEqual(releasedVersions);
     });
-
-      it('should process pipeline runs and return formatted released versions', async () => {
-        // Arrange
-        const mockPipelinesResponse = {
-          value: [
-            { id: 1, name: 'Pipeline1', folder: 'release' },
-          ],
-        };
-
-        const mockPipelineRunsResponse = {
-          value: [{
-            id: 1,
-            name: 'Pipeline1Run',
-            templateParameters: {
-              env: 'dev',
-            },
-            pipeline: { 
-              id: 1, 
-              name: 'Pipeline1', 
-              folder: 'release' 
-            },
-          }]
-        };
-
-        const mockPipelineRunDetailsResponse = {
-          id: 1,
-          name: 'Pipeline1Run1Details',
-          resources: {
-            pipelines: {
-              ['ci-artifact-pipeline']: {
-                pipeline: {
-                  name: 'repo',
-                },
-                version: '1.0.0',
-              }
-            }
-          }
-        };
-
-        const ReleasedVersions = [{
-          repo: 'repo',
-          pipelineId: 1,
-          pipelineName: 'Pipeline1',
-          runId: 1,
-          runName: 'Pipeline1Run',
-          version: '1.0.0'
-        }];
-
-        const mockGetPipelines = AzureDevOpsClient.getPipelines as jest.Mock;
-        mockGetPipelines.mockImplementation(() => Promise.resolve(mockPipelinesResponse));
-        
-        const mockGetPipelineRuns = AzureDevOpsClient.getPipelineRuns as jest.Mock;
-        mockGetPipelineRuns.mockImplementation(() => Promise.resolve(mockPipelineRunsResponse));
-
-        const mockGetPipelineRunDetails = AzureDevOpsClient.getPipelineRunDetails as jest.Mock;
-        mockGetPipelineRunDetails.mockImplementation(() => Promise.resolve(mockPipelineRunDetailsResponse));
-
-        // Act
-        const result = await getReleasedVersions(ENVIRONMENT.DEV);
-
-        // Assert
-        expect(result).toEqual(ReleasedVersions);
-      });
 
     it('should return empty array if no valid pipeline runs exist', async () => {
       // Arrange
-      const mockPipelinesResponse = {
-        value: [
-          { id: 1, name: 'Pipeline1', folder: 'release' },
-        ],
+      const mockPipelines = {
+        value: [mockPipelineFixtures.manualReleasePipeline],
       };
 
-      const mockPipelineRunsResponse = {
-        value: [
-          {
-            id: 1,
-            name: 'Pipeline1Run',
-            templateParameters: {
-              env: 'dev1', //invalid environment
-            },
-            pipeline: { 
-              id: 1, 
-              name: 'Pipeline1', 
-              folder: 'release' 
-            },
-          }
-        ]
+      const mockPipelineRuns = {
+        value: [mockPipelineRunFixtures.invalidEnvPipelineRun]
       };
 
-      // Empty pipeline runs
-      const mockGetPipelines = AzureDevOpsClient.getPipelines as jest.Mock;
-      mockGetPipelines.mockImplementation(() => Promise.resolve(mockPipelinesResponse));
-
-      const mockGetPipelineRuns = AzureDevOpsClient.getPipelineRuns as jest.Mock;
-      mockGetPipelineRuns.mockImplementation(() => Promise.resolve(mockPipelineRunsResponse));
+      mockPipelineResponse(mockPipelines);
+      mockPipelineRunsResponse(mockPipelineRuns);
 
       // Act
       const result = await getReleasedVersions(ENVIRONMENT.DEV);
@@ -356,44 +308,22 @@ describe('azureDevOpsService', () => {
 
     it('should return empty array if no artifact pipelines exist for pipeline runs', async () => {
       // Arrange
-      const mockPipelinesResponse = {
-        value: [
-          { id: 1, name: 'Pipeline1', folder: 'release' },
-        ],
+      const mockPipelines = {
+        value: [mockPipelineFixtures.manualReleasePipeline],
       };
 
-      const mockPipelineRunsResponse = {
-        value: [{
-          id: 1,
-          name: 'Pipeline1Run',
-          templateParameters: {
-            env: 'dev',
-          },
-          pipeline: { 
-            id: 1, 
-            name: 'Pipeline1', 
-            folder: 'release' 
-          },
-        }]
+      const mockPipelineRuns = {
+        value: [mockPipelineRunFixtures.manualPipelineRun]
       };
 
-      const mockPipelineRunDetailsResponse = {
-        id: 1,
-        name: 'Pipeline1Run1Details',
-        resources: {
-          pipelines: {}
-        }
+      const runDetailsMap = {
+        1: mockPipelineRunDetailsFixtures.missingArtifactPipelineRunDetails,
       };
 
-      const mockGetPipelines = AzureDevOpsClient.getPipelines as jest.Mock;
-      mockGetPipelines.mockImplementation(() => Promise.resolve(mockPipelinesResponse));
+      mockPipelineResponse(mockPipelines);
+      mockPipelineRunsResponse(mockPipelineRuns);
+      mockPipelineRunDetailsResponses(runDetailsMap);
       
-      const mockGetPipelineRuns = AzureDevOpsClient.getPipelineRuns as jest.Mock;
-      mockGetPipelineRuns.mockImplementation(() => Promise.resolve(mockPipelineRunsResponse));
-
-      const mockGetPipelineRunDetails = AzureDevOpsClient.getPipelineRunDetails as jest.Mock;
-      mockGetPipelineRunDetails.mockImplementation(() => Promise.resolve(mockPipelineRunDetailsResponse));
-
       // Act
       const result = await getReleasedVersions(ENVIRONMENT.DEV);
 
@@ -403,81 +333,33 @@ describe('azureDevOpsService', () => {
 
     it('should return most recent pipeline run for each pipeline', async () => {
       // Arrange
-      const mockPipelinesResponse = {
-        value: [
-          { id: 1, name: 'Pipeline1', folder: 'release' },
-        ],
+      const mockPipelines = {
+        value: [mockPipelineFixtures.manualReleasePipeline],
       };
 
-      const mockPipelineRunsResponse = {
+      const mockPipelineRuns = {
         value: [
-          {
-            id: 1,
-            name: 'Pipeline1Run1',
-            templateParameters: {
-              env: 'dev',
-            },
-            createdDate: '01/01/2024',
-            pipeline: { 
-              id: 1, 
-              name: 'Pipeline1', 
-              folder: 'release' 
-            },
-          },
-          {
-            id: 2,
-            name: 'Pipeline1Run2',
-            templateParameters: {
-              env: 'dev',
-            },
-            createdDate: '01/01/2025',
-            pipeline: { 
-              id: 1, 
-              name: 'Pipeline1', 
-              folder: 'release' 
-            },
-          },
+          mockPipelineRunFixtures.manualPipelineRun,
+          mockPipelineRunFixtures.newerManualPipelineRun,
         ]
       };
 
-      const mockPipelineRunDetailsResponse = {
-        id: 1,
-        name: 'Pipeline1Run1Details',
-        resources: {
-          pipelines: {
-            ['ci-artifact-pipeline']: {
-              pipeline: {
-                name: 'repo',
-              },
-              version: '1.0.0',
-            }
-          }
-        }
-      };
+      const runDetailsMap = {
+        1: mockPipelineRunDetailsFixtures.manualPipelineRunDetails,
+        2: mockPipelineRunDetailsFixtures.newerManualPipelineRunDetails,
+      }
 
-      const ReleasedVersions = [{
-        repo: 'repo',
-        pipelineId: 1,
-        pipelineName: 'Pipeline1',
-        runId: 2,
-        runName: 'Pipeline1Run2',
-        version: '1.0.0'
-      }];
+      const releasedVersions = [mockReleasedVersionsFixtures.pipeline1Run2Repo1];
+   
+      mockPipelineResponse(mockPipelines);
+      mockPipelineRunsResponse(mockPipelineRuns);
+      mockPipelineRunDetailsResponses(runDetailsMap);
 
-      const mockGetPipelines = AzureDevOpsClient.getPipelines as jest.Mock;
-      mockGetPipelines.mockImplementation(() => Promise.resolve(mockPipelinesResponse));
-      
-      const mockGetPipelineRuns = AzureDevOpsClient.getPipelineRuns as jest.Mock;
-      mockGetPipelineRuns.mockImplementation(() => Promise.resolve(mockPipelineRunsResponse));
-
-      const mockGetPipelineRunDetails = AzureDevOpsClient.getPipelineRunDetails as jest.Mock;
-      mockGetPipelineRunDetails.mockImplementation(() => Promise.resolve(mockPipelineRunDetailsResponse));
-      
       // Act
       const result = await getReleasedVersions(ENVIRONMENT.DEV);
 
       // Assert
-      expect(result).toEqual(ReleasedVersions);
+      expect(result).toEqual(releasedVersions);
     });
   });
 
@@ -490,8 +372,7 @@ describe('azureDevOpsService', () => {
         ],
       };
 
-      const mockGetPipelines = AzureDevOpsClient.getPipelines as jest.Mock;
-      mockGetPipelines.mockImplementation(() => Promise.resolve(mockPipelinesResponse));
+      mockPipelineResponse(mockPipelinesResponse);
       
       const mockGetPipelineRuns = AzureDevOpsClient.getPipelineRuns as jest.Mock;
       mockGetPipelineRuns.mockImplementation(() => Promise.resolve({ value: []}));
@@ -504,21 +385,15 @@ describe('azureDevOpsService', () => {
     });
 
     it('should throw NotFoundError when no release pipelines match criteria', async () => {
-
-      // Set the manualReleaseDirectory to use for filtering
-      mockConfig.manualReleaseDirectory = 'release';
-
       // Set up mock data that will NOT match the criteria
       const mockReleasePipelinesResponse = {
         value: [
-          { id: 1, name: 'Pipeline1', folder: 'other/invalid' },
-          { id: 2, name: 'Pipeline2', folder: 'also/invalid' },
+          mockPipelineFixtures.invalidPathPipeline
         ],
       };
 
       // Make sure the mock correctly returns this data
-      const mockGetPipelines = AzureDevOpsClient.getPipelines as jest.Mock;
-      mockGetPipelines.mockImplementation(() => Promise.resolve(mockReleasePipelinesResponse))
+      mockPipelineResponse(mockReleasePipelinesResponse)
 
       // Act & Assert
       await expect(getReleasedVersions(ENVIRONMENT.DEV)).rejects.toThrow(NotFoundError);
@@ -553,14 +428,13 @@ describe('azureDevOpsService', () => {
 
     it('should wrap unexpected errors in ExternalAPIError', async () => {
       // Arrange
-      const mockPipelinesResponse = {
+      const mockPipelines = {
         value: [
-          { id: 1, name: 'Pipeline1', folder: 'release' },
+          mockPipelineFixtures.manualReleasePipeline,
         ],
       };
       
-      const mockGetPipelines = AzureDevOpsClient.getPipelines as jest.Mock;
-      mockGetPipelines.mockImplementation(() => Promise.resolve(mockPipelinesResponse));
+      mockPipelineResponse(mockPipelines);
       
       // Mock getPipelineRuns to throw an unexpected error (not an AppError)
       // This simulates a case where the client returns successfully but something goes wrong during processing
@@ -577,53 +451,30 @@ describe('azureDevOpsService', () => {
   });
 
   describe('cache functionality', () => {
-    it('should use cached pipeline data when available', async () => {
+    beforeEach(() => {
       // Arrange
-      const mockPipelinesResponse = {
+      const mockPipelines = {
         value: [
-          { id: 1, name: 'Pipeline1', folder: 'release' },
+          mockPipelineFixtures.manualReleasePipeline,
         ],
       };
 
-      const mockPipelineRunsResponse = {
-        value: [{
-          id: 1,
-          name: 'Pipeline1Run',
-          templateParameters: {
-            env: 'dev',
-          },
-          pipeline: { 
-            id: 1, 
-            name: 'Pipeline1', 
-            folder: 'release' 
-          },
-        }]
+      const mockPipelineRuns = {
+        value: [
+          mockPipelineRunFixtures.manualPipelineRun,
+        ]
       };
 
-      const mockPipelineRunDetailsResponse = {
-        id: 1,
-        name: 'Pipeline1Run1Details',
-        resources: {
-          pipelines: {
-            ['ci-artifact-pipeline']: {
-              pipeline: {
-                name: 'repo',
-              },
-              version: '1.0.0',
-            }
-          }
-        }
-      };
+      const runDetailsMap = {
+        1: mockPipelineRunDetailsFixtures.manualPipelineRunDetails,
+      }
 
-      const mockGetPipelines = AzureDevOpsClient.getPipelines as jest.Mock;
-      mockGetPipelines.mockImplementation(() => Promise.resolve(mockPipelinesResponse));
-      
-      const mockGetPipelineRuns = AzureDevOpsClient.getPipelineRuns as jest.Mock;
-      mockGetPipelineRuns.mockImplementation(() => Promise.resolve(mockPipelineRunsResponse));
-
-      const mockGetPipelineRunDetails = AzureDevOpsClient.getPipelineRunDetails as jest.Mock;
-      mockGetPipelineRunDetails.mockImplementation(() => Promise.resolve(mockPipelineRunDetailsResponse));
-
+      mockPipelineResponse(mockPipelines);
+      mockPipelineRunsResponse(mockPipelineRuns);
+      mockPipelineRunDetailsResponses(runDetailsMap);
+    });
+    
+    it('should use cached pipeline data when available', async () => {
       // Act - First call should hit the API
       await getReleasedVersions(ENVIRONMENT.DEV);
 
@@ -635,52 +486,6 @@ describe('azureDevOpsService', () => {
     });
 
     it('should clear cache when clearCache is called', async () => {
-      // Arrange
-      const mockPipelinesResponse = {
-        value: [
-          { id: 1, name: 'Pipeline1', folder: 'release' },
-        ],
-      };
-
-      const mockPipelineRunsResponse = {
-        value: [{
-          id: 1,
-          name: 'Pipeline1Run',
-          templateParameters: {
-            env: 'dev',
-          },
-          pipeline: { 
-            id: 1, 
-            name: 'Pipeline1', 
-            folder: 'release' 
-          },
-        }]
-      };
-
-      const mockPipelineRunDetailsResponse = {
-        id: 1,
-        name: 'Pipeline1Run1Details',
-        resources: {
-          pipelines: {
-            ['ci-artifact-pipeline']: {
-              pipeline: {
-                name: 'repo',
-              },
-              version: '1.0.0',
-            }
-          }
-        }
-      };
-
-      const mockGetPipelines = AzureDevOpsClient.getPipelines as jest.Mock;
-      mockGetPipelines.mockImplementation(() => Promise.resolve(mockPipelinesResponse));
-      
-      const mockGetPipelineRuns = AzureDevOpsClient.getPipelineRuns as jest.Mock;
-      mockGetPipelineRuns.mockImplementation(() => Promise.resolve(mockPipelineRunsResponse));
-
-      const mockGetPipelineRunDetails = AzureDevOpsClient.getPipelineRunDetails as jest.Mock;
-      mockGetPipelineRunDetails.mockImplementation(() => Promise.resolve(mockPipelineRunDetailsResponse));
-
       // Act - First call should hit the API
       await getReleasedVersions(ENVIRONMENT.DEV);
 
@@ -698,51 +503,6 @@ describe('azureDevOpsService', () => {
       // Arrange
       jest.useFakeTimers();
 
-      const mockPipelinesResponse = {
-        value: [
-          { id: 1, name: 'Pipeline1', folder: 'release' },
-        ],
-      };
-
-      const mockPipelineRunsResponse = {
-        value: [{
-          id: 1,
-          name: 'Pipeline1Run',
-          templateParameters: {
-            env: 'dev',
-          },
-          pipeline: { 
-            id: 1, 
-            name: 'Pipeline1', 
-            folder: 'release' 
-          },
-        }]
-      };
-
-      const mockPipelineRunDetailsResponse = {
-        id: 1,
-        name: 'Pipeline1Run1Details',
-        resources: {
-          pipelines: {
-            ['ci-artifact-pipeline']: {
-              pipeline: {
-                name: 'repo',
-              },
-              version: '1.0.0',
-            }
-          }
-        }
-      };
-
-      const mockGetPipelines = AzureDevOpsClient.getPipelines as jest.Mock;
-      mockGetPipelines.mockImplementation(() => Promise.resolve(mockPipelinesResponse));
-      
-      const mockGetPipelineRuns = AzureDevOpsClient.getPipelineRuns as jest.Mock;
-      mockGetPipelineRuns.mockImplementation(() => Promise.resolve(mockPipelineRunsResponse));
-
-      const mockGetPipelineRunDetails = AzureDevOpsClient.getPipelineRunDetails as jest.Mock;
-      mockGetPipelineRunDetails.mockImplementation(() => Promise.resolve(mockPipelineRunDetailsResponse));
-
       // Act - First call should hit the API
       await getReleasedVersions(ENVIRONMENT.DEV);
 
@@ -759,59 +519,13 @@ describe('azureDevOpsService', () => {
       jest.useRealTimers();
     });
     
-    it('calling clearCache() should remove the key from the cache when a key is provided', async () => {
-      // Arrange
-      const mockPipelinesResponse = {
-        value: [
-          { id: 1, name: 'Pipeline1', folder: 'release' },
-        ],
-      };
-      
-      const mockPipelineRunsResponse = {
-        value: [{
-          id: 1,
-          name: 'Pipeline1Run',
-          templateParameters: {
-            env: 'dev',
-          },
-          pipeline: { 
-            id: 1, 
-            name: 'Pipeline1', 
-            folder: 'release' 
-          },
-        }]
-      };
-      
-      const mockPipelineRunDetailsResponse = {
-        id: 1,
-        name: 'Pipeline1Run1Details',
-        resources: {
-          pipelines: {
-            ['ci-artifact-pipeline']: {
-              pipeline: {
-                name: 'repo',
-              },
-              version: '1.0.0',
-            }
-          }
-        }
-      };
-    
-      const mockGetPipelines = AzureDevOpsClient.getPipelines as jest.Mock;
-      mockGetPipelines.mockImplementation(() => Promise.resolve(mockPipelinesResponse));
-      
-      const mockGetPipelineRuns = AzureDevOpsClient.getPipelineRuns as jest.Mock;
-      mockGetPipelineRuns.mockImplementation(() => Promise.resolve(mockPipelineRunsResponse));
-      
-      const mockGetPipelineRunDetails = AzureDevOpsClient.getPipelineRunDetails as jest.Mock;
-      mockGetPipelineRunDetails.mockImplementation(() => Promise.resolve(mockPipelineRunDetailsResponse));
-    
+    it('calling clearCache() should remove the key from the cache when a key is provided', async () => {  
       // Act - Populate the cache for different environments
       // First call for DEV environment - will populate the cache
       await getReleasedVersions(ENVIRONMENT.DEV);
       
       // Reset the call counts to make testing easier
-      mockGetPipelines.mockClear();
+      mockGetPipelinesRef.mockClear();
       
       // Call clearCache with a specific pattern (DEV)
       clearCache('pipelines');
