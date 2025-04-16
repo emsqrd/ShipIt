@@ -85,7 +85,7 @@ async function getPipelines(): Promise<Pipeline[]> {
   }
 }
 
-export async function getBuildTimelineRecords(buildId: number): Promise<BuildTimelineRecord[]> {
+async function getBuildTimelineRecords(buildId: number): Promise<BuildTimelineRecord[]> {
   try {
     const response = await azureDevOpsClient.getBuildTimeline(buildId);
 
@@ -164,10 +164,10 @@ async function getMostRecentReleasePipelineRunByEnvironment(
     // Find the first run that has a successful deployment stage
     for (const run of sortedRuns) {
       try {
-        const buildTimelineRecord = await azureDevOpsClient.getBuildTimeline(run.id);
+        const buildTimelineRecord = await getBuildTimelineRecords(run.id);
 
         // Check if the timeline contains a successful stage with the target name
-        const successfulStage = buildTimelineRecord.records.find(
+        const successfulStage = buildTimelineRecord.find(
           (record) =>
             record.parentId === null && record.name === stageName && record.result === 'succeeded',
         );

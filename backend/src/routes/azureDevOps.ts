@@ -2,8 +2,7 @@ import express from 'express';
 
 import { ENVIRONMENT } from '../enums/environment.js';
 import { catchAsync } from '../middleware/errorHandler.js';
-import { getBuildTimelineRecords, getReleasedVersions } from '../services/azureDevOpsService.js';
-import { BuildTimelineRecord, ReleasedVersion } from '../types/AzureDevOpsTypes.js';
+import { getReleasedVersions } from '../services/azureDevOpsService.js';
 import { RequestValidationError } from '../utils/errors.js';
 
 // Define type for the expected query parameters
@@ -19,17 +18,6 @@ const router = express.Router();
 function isValidEnvironment(value: string): value is ENVIRONMENT {
   return Object.values(ENVIRONMENT).includes(value as ENVIRONMENT);
 }
-
-router.get(
-  '/buildTimeline',
-  catchAsync(async (req, res) => {
-    const { buildId } = req.query as unknown as { buildId: number };
-
-    const buildTimelineRecords: BuildTimelineRecord[] = await getBuildTimelineRecords(buildId);
-
-    res.json(buildTimelineRecords);
-  }),
-);
 
 router.get(
   '/releasedVersions',
@@ -49,8 +37,7 @@ router.get(
       );
     }
 
-    //TODO: After azureDevOpsService.js is refactored to ts come back and remove the type assertion
-    const releasedVersions: ReleasedVersion[] = await getReleasedVersions(environment);
+    const releasedVersions = await getReleasedVersions(environment);
 
     res.json(releasedVersions);
   }),
