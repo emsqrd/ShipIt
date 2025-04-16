@@ -82,7 +82,6 @@ describe('AzureDevOpsClient', () => {
           id: 1,
           name: 'pipeline',
           folder: 'release',
-          url: 'url',
         }]
       };
 
@@ -123,12 +122,6 @@ describe('AzureDevOpsClient', () => {
               env: 'uat',
           },
           createdDate: '06/16/2012',
-          pipeline: {
-              id: 1,
-              name: 'Pipeline 1',
-              folder: 'release',
-              url: 'url',
-          },
         }],
       };
 

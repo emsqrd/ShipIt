@@ -70,7 +70,7 @@ export type PipelineRunDetail = {
 
 export type BuildTimelineRecord = {
   id: string;
-  parentId: string;
+  parentId: string | null;
   type: string;
   name: string;
   state: string;
