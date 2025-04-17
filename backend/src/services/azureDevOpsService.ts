@@ -283,6 +283,7 @@ export async function getReleasedVersions(environment: ENVIRONMENT): Promise<Rel
 
 export const __test__ = {
   filterReleasePipelines,
+  getMostRecentRunPerRepo,
 };
 
 export default {

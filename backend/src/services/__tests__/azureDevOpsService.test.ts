@@ -4,7 +4,13 @@ import { ExternalAPIError, NotFoundError } from '../../utils/errors';
 import { ENVIRONMENT } from '../../enums/environment';
 import { ErrorCode } from '../../enums/errorCode';
 import { HttpStatusCode } from '../../enums/httpStatusCode';
-import { BuildTimelineResponse, PipelineResponse, PipelineRunDetailResponse, PipelineRunResponse } from '../../types/AzureDevOpsTypes';
+import {
+  BuildTimelineResponse,
+  PipelineResponse,
+  PipelineRun,
+  PipelineRunDetailResponse,
+  PipelineRunResponse
+} from '../../types/AzureDevOpsTypes';
 
 // Define a test-specific version of PipelineRunDetailResponse that handles all possible structures
 type TestPipelineRunDetailResponse = {
@@ -236,6 +242,73 @@ describe('azureDevOpsService', () => {
       expect(result).toEqual([
         mockPipelineFixtures.manualReleasePipeline,
       ]);
+    });
+    
+    describe('getMostRecentRunPerRepo', () => {
+      it('should group pipelines by repo and select most recent run', () => {
+        // Arrange
+        const olderRun = {
+          id: 1,
+          createdDate: '2024-01-01T10:00:00Z',
+          pipelineRunDetail: { repo: 'repo1' },
+        } as PipelineRun;
+        
+        const newerRun = {
+          id: 2,
+          createdDate: '2024-01-02T10:00:00Z',
+          pipelineRunDetail: { repo: 'repo1' },
+        } as PipelineRun;
+        
+        const anotherRepoRun = {
+          id: 3,
+          createdDate: '2024-01-01T10:00:00Z',
+          pipelineRunDetail: { repo: 'repo2' },
+        } as PipelineRun;
+        
+        const pipelineRuns = [olderRun, newerRun, anotherRepoRun];
+        
+        // Act
+        const result = __test__.getMostRecentRunPerRepo(pipelineRuns);
+        
+        // Assert
+        expect(result).toHaveLength(2);
+        expect(result).toContainEqual(newerRun); // Should choose newer run for repo1
+        expect(result).toContainEqual(anotherRepoRun); // Should include repo2's only run
+      });
+      
+      it('should handle empty input array', () => {
+        // Act
+        const result = __test__.getMostRecentRunPerRepo([]);
+        
+        // Assert
+        expect(result).toEqual([]);
+      });
+      
+      it('should handle runs with identical timestamps', () => {
+        // Arrange
+        const sameTimeRun1 = {
+          id: 1,
+          createdDate: '2024-01-01T10:00:00Z',
+          pipelineRunDetail: { repo: 'repo1' },
+        } as PipelineRun;
+        
+        const sameTimeRun2 = {
+          id: 2,
+          createdDate: '2024-01-01T10:00:00Z',
+          pipelineRunDetail: { repo: 'repo1' },
+        } as PipelineRun;
+        
+        // First one in the array should be selected in case of identical timestamps
+        // due to stable sort behavior
+        const pipelineRuns = [sameTimeRun1, sameTimeRun2];
+        
+        // Act
+        const result = __test__.getMostRecentRunPerRepo(pipelineRuns);
+        
+        // Assert
+        expect(result).toHaveLength(1);
+        expect(result[0].id).toBe(sameTimeRun1.id);
+      });
     });
   });
 
