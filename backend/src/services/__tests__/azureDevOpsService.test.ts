@@ -228,20 +228,21 @@ describe('azureDevOpsService', () => {
     console.error = originalConsoleError;
   });
 
-  describe ('internal functionality', () => {
-    it('should filter pipelines based on folder criteria', async() => {
+  describe('internal functionality', () => {
+    describe('filterReleasePipelines', () => {
+      it('should filter pipelines based on folder criteria', async() => {
+        const mockPipelines = [
+          mockPipelineFixtures.manualReleasePipeline,
+          mockPipelineFixtures.invalidPathPipeline,
+        ];
 
-      const mockPipelines = [
-        mockPipelineFixtures.manualReleasePipeline,
-        mockPipelineFixtures.invalidPathPipeline,
-      ];
+        const releaseDirectories = ['manual'];
 
-      const releaseDirectories = ['manual'];
-
-      const result = __test__.filterReleasePipelines(mockPipelines, releaseDirectories);
-      expect(result).toEqual([
-        mockPipelineFixtures.manualReleasePipeline,
-      ]);
+        const result = __test__.filterReleasePipelines(mockPipelines, releaseDirectories);
+        expect(result).toEqual([
+          mockPipelineFixtures.manualReleasePipeline,
+        ]);
+      });
     });
     
     describe('getMostRecentRunPerRepo', () => {
@@ -313,215 +314,218 @@ describe('azureDevOpsService', () => {
   });
 
   describe('getReleasedVersions', () => {
-    it('should return automated pipelines if they exist for a repo', async () => {
-      // Arrange
-      const mockPipelines = {
-        value: [
-          mockPipelineFixtures.manualReleasePipeline,
-          mockPipelineFixtures.automatedReleasePipeline,
-        ],
-      };
+    describe('successful pipeline retrieval', () => {
+      it('should return automated pipelines if they exist for a repo', async () => {
+        // Arrange
+        const mockPipelines = {
+          value: [
+            mockPipelineFixtures.manualReleasePipeline,
+            mockPipelineFixtures.automatedReleasePipeline,
+          ],
+        };
 
-      const mockPipelineRuns = {
-        value: [
-          mockPipelineRunFixtures.manualPipelineRun,
-          mockPipelineRunFixtures.automatedPipelineRun
-        ]
-      };
+        const mockPipelineRuns = {
+          value: [
+            mockPipelineRunFixtures.manualPipelineRun,
+            mockPipelineRunFixtures.automatedPipelineRun
+          ]
+        };
 
-      // Create a map of run IDs to their corresponding pipeline run details
-      const runDetailsMap = {
-        1: mockPipelineRunDetailsFixtures.manualPipelineRunDetails,
-        4: mockPipelineRunDetailsFixtures.automatedPipelineRunDetails
-      };
+        // Create a map of run IDs to their corresponding pipeline run details
+        const runDetailsMap = {
+          1: mockPipelineRunDetailsFixtures.manualPipelineRunDetails,
+          4: mockPipelineRunDetailsFixtures.automatedPipelineRunDetails
+        };
 
-      const mockBuildTimeline = {
-        records: [
-          mockBuildTimelineFixtures.devDeploy,
-        ]
-      };
+        const mockBuildTimeline = {
+          records: [
+            mockBuildTimelineFixtures.devDeploy,
+          ]
+        };
 
-      const releasedVersions = [
-        mockReleasedVersionsFixtures.pipeline1Run1Repo1,
-        mockReleasedVersionsFixtures.pipeline4Run4Repo4,
-      ];
+        const releasedVersions = [
+          mockReleasedVersionsFixtures.pipeline1Run1Repo1,
+          mockReleasedVersionsFixtures.pipeline4Run4Repo4,
+        ];
 
-      // Use the helper functions to set up the mocks
-      mockPipelineResponse(mockPipelines);
-      mockPipelineRunsResponse(mockPipelineRuns);
-      mockPipelineRunDetailsResponses(runDetailsMap);
-      mockBuildTimelineResponse(mockBuildTimeline);
+        // Use the helper functions to set up the mocks
+        mockPipelineResponse(mockPipelines);
+        mockPipelineRunsResponse(mockPipelineRuns);
+        mockPipelineRunDetailsResponses(runDetailsMap);
+        mockBuildTimelineResponse(mockBuildTimeline);
 
-      // Act
-      const result = await getReleasedVersions(ENVIRONMENT.DEV);
+        // Act
+        const result = await getReleasedVersions(ENVIRONMENT.DEV);
 
-      // Assert
-      expect(result).toEqual(releasedVersions);
+        // Assert
+        expect(result).toEqual(releasedVersions);
+      });
+
+      it('should return most recent pipeline run for each pipeline', async () => {
+        // Arrange
+        const mockPipelines = {
+          value: [mockPipelineFixtures.manualReleasePipeline],
+        };
+
+        const mockPipelineRuns = {
+          value: [
+            mockPipelineRunFixtures.manualPipelineRun,
+            mockPipelineRunFixtures.newerManualPipelineRun,
+          ]
+        };
+
+        const runDetailsMap = {
+          1: mockPipelineRunDetailsFixtures.manualPipelineRunDetails,
+          2: mockPipelineRunDetailsFixtures.newerManualPipelineRunDetails,
+        }
+
+        const releasedVersions = [mockReleasedVersionsFixtures.pipeline1Run2Repo1];
+
+        mockPipelineResponse(mockPipelines);
+        mockPipelineRunsResponse(mockPipelineRuns);
+        mockPipelineRunDetailsResponses(runDetailsMap);
+
+        // Act
+        const result = await getReleasedVersions(ENVIRONMENT.DEV);
+
+        // Assert
+        expect(result).toEqual(releasedVersions);
+      });
+
+      it('should group multiple pipelines for the same repo', async () => {
+        // Arrange
+        const mockPipelines = {
+          value: [
+            mockPipelineFixtures.manualReleasePipeline,
+            mockPipelineFixtures.automatedReleasePipeline,
+          ]
+        };
+
+        const mockPipelineRuns = {
+          value: [
+            mockPipelineRunFixtures.manualPipelineRun,
+            mockPipelineRunFixtures.automatedPipelineRun,
+          ]
+        };
+
+        const runDetailsMap = {
+          1: mockPipelineRunDetailsFixtures.manualPipelineRunDetails,
+          4: mockPipelineRunDetailsFixtures.automatedPipelineRepo1RunDetails,
+        }
+
+        const mockBuildTimeline = {
+          records: [
+            mockBuildTimelineFixtures.devDeploy,
+          ]
+        };
+
+        const releasedVersions = [
+          mockReleasedVersionsFixtures.pipeline4Run4Repo1,
+        ];
+
+        mockPipelineResponse(mockPipelines);
+        mockPipelineRunsResponse(mockPipelineRuns);
+        mockPipelineRunDetailsResponses(runDetailsMap);
+        mockBuildTimelineResponse(mockBuildTimeline);
+
+        // Act
+        const result = await getReleasedVersions(ENVIRONMENT.DEV);
+
+        // Assert
+        expect(result).toEqual(releasedVersions);
+      });
     });
 
-    it('should return empty array if no pipeline runs exist for the environment', async () => {
-      // Arrange
-      const mockPipelines = {
-        value: [mockPipelineFixtures.manualReleasePipeline],
-      };
+    describe('empty result handling', () => {
+      it('should return empty array if no pipeline runs exist for the environment', async () => {
+        // Arrange
+        const mockPipelines = {
+          value: [mockPipelineFixtures.manualReleasePipeline],
+        };
 
-      const mockPipelineRuns = {
-        value: [mockPipelineRunFixtures.invalidEnvPipelineRun]
-      };
+        const mockPipelineRuns = {
+          value: [mockPipelineRunFixtures.invalidEnvPipelineRun]
+        };
 
-      mockPipelineResponse(mockPipelines);
-      mockPipelineRunsResponse(mockPipelineRuns);
+        mockPipelineResponse(mockPipelines);
+        mockPipelineRunsResponse(mockPipelineRuns);
 
-      // Act
-      const result = await getReleasedVersions(ENVIRONMENT.DEV);
+        // Act
+        const result = await getReleasedVersions(ENVIRONMENT.DEV);
 
-      // Assert
-      expect(result).toEqual([]);
-    });
+        // Assert
+        expect(result).toEqual([]);
+      });
 
-    it('should return empty array if no pipeline runs exist for a pipeline', async () => {
-      // Arrange
-      const mockPipelines = {
-        value: [mockPipelineFixtures.manualReleasePipeline],
-      };
+      it('should return empty array if no pipeline runs exist for a pipeline', async () => {
+        // Arrange
+        const mockPipelines = {
+          value: [mockPipelineFixtures.manualReleasePipeline],
+        };
 
-      const mockPipelineRuns = {
-        value: [],
-      };
+        const mockPipelineRuns = {
+          value: [],
+        };
 
-      mockPipelineResponse(mockPipelines);
-      mockPipelineRunsResponse(mockPipelineRuns);
+        mockPipelineResponse(mockPipelines);
+        mockPipelineRunsResponse(mockPipelineRuns);
 
-      // Act
-      const result = await getReleasedVersions(ENVIRONMENT.DEV);
+        // Act
+        const result = await getReleasedVersions(ENVIRONMENT.DEV);
 
-      // Assert
-      expect(result).toEqual([]);
-    });
+        // Assert
+        expect(result).toEqual([]);
+      });
 
-    it('should return empty array if no artifact pipelines exist for pipeline runs', async () => {
-      // Arrange
-      const mockPipelines = {
-        value: [mockPipelineFixtures.manualReleasePipeline],
-      };
+      it('should return empty array if no artifact pipelines exist for pipeline runs', async () => {
+        // Arrange
+        const mockPipelines = {
+          value: [mockPipelineFixtures.manualReleasePipeline],
+        };
 
-      const mockPipelineRuns = {
-        value: [mockPipelineRunFixtures.manualPipelineRun]
-      };
+        const mockPipelineRuns = {
+          value: [mockPipelineRunFixtures.manualPipelineRun]
+        };
 
-      const runDetailsMap = {
-        1: mockPipelineRunDetailsFixtures.missingArtifactPipelineRunDetails,
-      };
+        const runDetailsMap = {
+          1: mockPipelineRunDetailsFixtures.missingArtifactPipelineRunDetails,
+        };
 
-      mockPipelineResponse(mockPipelines);
-      mockPipelineRunsResponse(mockPipelineRuns);
-      mockPipelineRunDetailsResponses(runDetailsMap);
+        mockPipelineResponse(mockPipelines);
+        mockPipelineRunsResponse(mockPipelineRuns);
+        mockPipelineRunDetailsResponses(runDetailsMap);
 
-      // Act
-      const result = await getReleasedVersions(ENVIRONMENT.DEV);
+        // Act
+        const result = await getReleasedVersions(ENVIRONMENT.DEV);
 
-      // Assert
-      expect(result).toEqual([]);
-    });
+        // Assert
+        expect(result).toEqual([]);
+      });
 
-    it('should return most recent pipeline run for each pipeline', async () => {
-      // Arrange
-      const mockPipelines = {
-        value: [mockPipelineFixtures.manualReleasePipeline],
-      };
+      it('should return null if there are automated pipeline runs for an environment that is not configured', async () => {
+        // Arrange
+        const mockPipelines = {
+          value: [mockPipelineFixtures.automatedReleasePipeline],
+        };
 
-      const mockPipelineRuns = {
-        value: [
-          mockPipelineRunFixtures.manualPipelineRun,
-          mockPipelineRunFixtures.newerManualPipelineRun,
-        ]
-      };
+        const mockPipelineRuns = {
+          value: [mockPipelineRunFixtures.automatedPipelineRun]
+        };
 
-      const runDetailsMap = {
-        1: mockPipelineRunDetailsFixtures.manualPipelineRunDetails,
-        2: mockPipelineRunDetailsFixtures.newerManualPipelineRunDetails,
-      }
+        const runDetailsMap = {
+          4: mockPipelineRunDetailsFixtures.automatedPipelineRunDetails,
+        };
 
-      const releasedVersions = [mockReleasedVersionsFixtures.pipeline1Run2Repo1];
+        mockPipelineResponse(mockPipelines);
+        mockPipelineRunsResponse(mockPipelineRuns);
+        mockPipelineRunDetailsResponses(runDetailsMap);
 
-      mockPipelineResponse(mockPipelines);
-      mockPipelineRunsResponse(mockPipelineRuns);
-      mockPipelineRunDetailsResponses(runDetailsMap);
+        // Act
+        const result = await getReleasedVersions(ENVIRONMENT.PERF1);
 
-      // Act
-      const result = await getReleasedVersions(ENVIRONMENT.DEV);
-
-      // Assert
-      expect(result).toEqual(releasedVersions);
-    });
-
-    it('should group multiple pipelines for the same repo', async () => {
-      // Arrange
-      const mockPipelines = {
-        value: [
-          mockPipelineFixtures.manualReleasePipeline,
-          mockPipelineFixtures.automatedReleasePipeline,
-        ]
-      };
-
-      const mockPipelineRuns = {
-        value: [
-          mockPipelineRunFixtures.manualPipelineRun,
-          mockPipelineRunFixtures.automatedPipelineRun,
-        ]
-      };
-
-      const runDetailsMap = {
-        1: mockPipelineRunDetailsFixtures.manualPipelineRunDetails,
-        4: mockPipelineRunDetailsFixtures.automatedPipelineRepo1RunDetails,
-      }
-
-      const mockBuildTimeline = {
-        records: [
-          mockBuildTimelineFixtures.devDeploy,
-        ]
-      };
-
-      const releasedVersions = [
-        mockReleasedVersionsFixtures.pipeline4Run4Repo1,
-      ];
-
-      mockPipelineResponse(mockPipelines);
-      mockPipelineRunsResponse(mockPipelineRuns);
-      mockPipelineRunDetailsResponses(runDetailsMap);
-      mockBuildTimelineResponse(mockBuildTimeline);
-
-      // Act
-      const result = await getReleasedVersions(ENVIRONMENT.DEV);
-
-      // Assert
-      expect(result).toEqual(releasedVersions);
-
-    });
-
-    it('should return null if there are automated pipeline runs for an environment that is not configured', async () => {
-      // Arrange
-      const mockPipelines = {
-        value: [mockPipelineFixtures.automatedReleasePipeline],
-      };
-
-      const mockPipelineRuns = {
-        value: [mockPipelineRunFixtures.automatedPipelineRun]
-      };
-
-      const runDetailsMap = {
-        4: mockPipelineRunDetailsFixtures.automatedPipelineRunDetails,
-      };
-
-      mockPipelineResponse(mockPipelines);
-      mockPipelineRunsResponse(mockPipelineRuns);
-      mockPipelineRunDetailsResponses(runDetailsMap);
-
-      // Act
-      const result = await getReleasedVersions(ENVIRONMENT.PERF1);
-
-      // Assert
-      expect(result).toEqual([]);
+        // Assert
+        expect(result).toEqual([]);
+      });
     });
   });
 
