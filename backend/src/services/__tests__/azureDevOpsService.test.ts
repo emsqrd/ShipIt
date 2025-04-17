@@ -1,4 +1,4 @@
-import { afterAll, afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
+import { afterAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { ExternalAPIError, NotFoundError } from '../../utils/errors';
 
 import { ENVIRONMENT } from '../../enums/environment';
@@ -177,7 +177,7 @@ const mockPipelineFixtures = {
 
 const mockPipelineRunFixtures = {
   manualPipelineRun: createMockPipelineRun(1, 'Pipeline1Run1', 'dev', '01-01-2024', 1, 'Pipeline1', 'manual'),
-  invalidEnvPipelineRun: createMockPipelineRun(1, 'Pipeline4Run4', 'dev1', '01-01-2025', 1, 'Pipeline1', 'manual'),
+  invalidEnvPipelineRun: createMockPipelineRun(1, 'Pipeline1Run1', 'dev1', '01-01-2025', 1, 'Pipeline1', 'manual'),
   newerManualPipelineRun: createMockPipelineRun(2, 'Pipeline1Run2', 'dev', '01-01-2025', 1, 'Pipeline1', 'manual'),
   automatedPipelineRun: createMockPipelineRun(4, 'Pipeline4Run4', '', '01-01-2025', 4, 'Pipeline4', 'automated'),
 };
@@ -208,7 +208,7 @@ console.error = jest.fn() as jest.Mock;
 
 describe('azureDevOpsService', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
     (console.error as jest.Mock).mockClear();
     clearCache();
 
@@ -216,10 +216,6 @@ describe('azureDevOpsService', () => {
     mockConfig.manualReleaseDirectory = 'manual';
     mockConfig.automatedReleaseDirectory = 'automated';
   });
-
-  afterEach(() => {
-    jest.resetAllMocks();
-  })
 
   afterAll(() => {
     // Restore console.error
@@ -241,7 +237,7 @@ describe('azureDevOpsService', () => {
         mockPipelineFixtures.manualReleasePipeline,
       ]);
     });
-  })
+  });
 
   describe('getReleasedVersions', () => {
     it('should return automated pipelines if they exist for a repo', async () => {
@@ -290,7 +286,7 @@ describe('azureDevOpsService', () => {
       expect(result).toEqual(releasedVersions);
     });
 
-    it('should return empty array if no valid pipeline runs exist', async () => {
+    it('should return empty array if no pipeline runs exist for the environment', async () => {
       // Arrange
       const mockPipelines = {
         value: [mockPipelineFixtures.manualReleasePipeline],
@@ -298,6 +294,26 @@ describe('azureDevOpsService', () => {
 
       const mockPipelineRuns = {
         value: [mockPipelineRunFixtures.invalidEnvPipelineRun]
+      };
+
+      mockPipelineResponse(mockPipelines);
+      mockPipelineRunsResponse(mockPipelineRuns);
+
+      // Act
+      const result = await getReleasedVersions(ENVIRONMENT.DEV);
+
+      // Assert
+      expect(result).toEqual([]);
+    });
+
+    it('should return empty array if no pipeline runs exist for a pipeline', async () => {
+      // Arrange
+      const mockPipelines = {
+        value: [mockPipelineFixtures.manualReleasePipeline],
+      };
+
+      const mockPipelineRuns = {
+        value: [],
       };
 
       mockPipelineResponse(mockPipelines);
@@ -408,6 +424,31 @@ describe('azureDevOpsService', () => {
       // Assert
       expect(result).toEqual(releasedVersions);
 
+    });
+
+    it('should return null if there are automated pipeline runs for an environment that is not configured', async () => {
+      // Arrange
+      const mockPipelines = {
+        value: [mockPipelineFixtures.automatedReleasePipeline],
+      };
+
+      const mockPipelineRuns = {
+        value: [mockPipelineRunFixtures.automatedPipelineRun]
+      };
+
+      const runDetailsMap = {
+        4: mockPipelineRunDetailsFixtures.automatedPipelineRunDetails,
+      };
+
+      mockPipelineResponse(mockPipelines);
+      mockPipelineRunsResponse(mockPipelineRuns);
+      mockPipelineRunDetailsResponses(runDetailsMap);
+
+      // Act
+      const result = await getReleasedVersions(ENVIRONMENT.PERF1);
+
+      // Assert
+      expect(result).toEqual([]);
     });
   });
 
