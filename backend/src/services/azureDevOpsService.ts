@@ -163,21 +163,17 @@ async function getMostRecentReleasePipelineRunByEnvironment(
 
     // Find the first run that has a successful deployment stage
     for (const run of sortedRuns) {
-      try {
-        const buildTimelineRecord = await getBuildTimelineRecords(run.id);
+      const buildTimelineRecord = await getBuildTimelineRecords(run.id);
 
-        // Check if the timeline contains a successful stage with the target name
-        const successfulStage = buildTimelineRecord.find(
-          (record) =>
-            record.parentId === null && record.name === stageName && record.result === 'succeeded',
-        );
+      // Check if the timeline contains a successful stage with the target name
+      const successfulStage = buildTimelineRecord.find(
+        (record) =>
+          record.parentId === null && record.name === stageName && record.result === 'succeeded',
+      );
 
-        if (successfulStage) {
-          mostRecentPipelineRun = run;
-          break; // Found a successful run, stop searching
-        }
-      } catch (error) {
-        console.warn(`Failed to fetch timeline for run ${run.id}:`, error);
+      if (successfulStage) {
+        mostRecentPipelineRun = run;
+        break; // Found a successful run, stop searching
       }
     }
   }
@@ -215,6 +211,29 @@ async function getMostRecentReleasePipelineRunByEnvironment(
   };
 }
 
+function getMostRecentRunPerRepo(pipelineRuns: PipelineRun[]): PipelineRun[] {
+  // Group pipelines by repo name
+  const repoGroups = new Map<string, PipelineRun[]>();
+
+  for (const run of pipelineRuns) {
+    const repo = run.pipelineRunDetail.repo;
+    if (!repoGroups.has(repo)) {
+      repoGroups.set(repo, []);
+    }
+    repoGroups.get(repo)!.push(run);
+  }
+
+  // For each repo group, select only the most recent run
+  const latestRuns: PipelineRun[] = [];
+
+  for (const runs of repoGroups.values()) {
+    runs.sort((a, b) => new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime());
+    latestRuns.push(runs[0]);
+  }
+
+  return latestRuns;
+}
+
 // Get all released versions for a specific environment
 export async function getReleasedVersions(environment: ENVIRONMENT): Promise<ReleasedVersion[]> {
   try {
@@ -232,24 +251,7 @@ export async function getReleasedVersions(environment: ENVIRONMENT): Promise<Rel
       (run): run is PipelineRun => run !== null,
     );
 
-    // Group pipelines by repo name
-    const repoGroups = new Map<string, PipelineRun[]>();
-
-    for (const run of filteredPipelineRuns) {
-      const repo = run.pipelineRunDetail.repo;
-      if (!repoGroups.has(repo)) {
-        repoGroups.set(repo, []);
-      }
-      repoGroups.get(repo)!.push(run);
-    }
-
-    // For each repo group, select only the most recent run
-    const latestRuns: PipelineRun[] = [];
-
-    for (const runs of repoGroups.values()) {
-      runs.sort((a, b) => new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime());
-      latestRuns.push(runs[0]);
-    }
+    const latestRuns = getMostRecentRunPerRepo(filteredPipelineRuns);
 
     // Map the results into the final format
     const releasedVersions: ReleasedVersion[] = latestRuns.map((pipelineRun) => ({

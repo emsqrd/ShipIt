@@ -2,6 +2,8 @@ import { afterAll, afterEach, beforeEach, describe, expect, it, jest } from '@je
 import { ExternalAPIError, NotFoundError } from '../../utils/errors';
 
 import { ENVIRONMENT } from '../../enums/environment';
+import { ErrorCode } from '../../enums/errorCode';
+import { HttpStatusCode } from '../../enums/httpStatusCode';
 import { BuildTimelineResponse, PipelineResponse, PipelineRunDetailResponse, PipelineRunResponse } from '../../types/AzureDevOpsTypes';
 
 // Define a test-specific version of PipelineRunDetailResponse that handles all possible structures
@@ -110,8 +112,8 @@ const mockBuildTimelineResponse = (mockBuildTimelineResponse: BuildTimelineRespo
 
 // Mock data factories
 const createMockPipeline = (id: number, name: string, folder: string) => ({
-  id, 
-  name, 
+  id,
+  name,
   folder,
 });
 
@@ -128,10 +130,10 @@ const createMockPipelineRun = (id: number, name: string, env: string, createdDat
 });
 
 const createMockPipelineRunDetails = (
-  id: number, 
-  name: string, 
-  repoName?: string, 
-  version?: string, 
+  id: number,
+  name: string,
+  repoName?: string,
+  version?: string,
   includeArtifactPipeline: boolean = true
 ) => ({
   id,
@@ -175,9 +177,9 @@ const mockPipelineFixtures = {
 
 const mockPipelineRunFixtures = {
   manualPipelineRun: createMockPipelineRun(1, 'Pipeline1Run1', 'dev', '01-01-2024', 1, 'Pipeline1', 'manual'),
+  invalidEnvPipelineRun: createMockPipelineRun(1, 'Pipeline4Run4', 'dev1', '01-01-2025', 1, 'Pipeline1', 'manual'),
   newerManualPipelineRun: createMockPipelineRun(2, 'Pipeline1Run2', 'dev', '01-01-2025', 1, 'Pipeline1', 'manual'),
   automatedPipelineRun: createMockPipelineRun(4, 'Pipeline4Run4', '', '01-01-2025', 4, 'Pipeline4', 'automated'),
-  invalidEnvPipelineRun: createMockPipelineRun(1, 'Pipeline4Run4', 'dev1', '01-01-2025', 1, 'Pipeline1', 'manual'),
 };
 
 const mockPipelineRunDetailsFixtures = {
@@ -185,6 +187,7 @@ const mockPipelineRunDetailsFixtures = {
   newerManualPipelineRunDetails: createMockPipelineRunDetails(2, 'Pipeline1Run2', 'repo1', '1.0.0'),
   automatedPipelineRunDetails: createMockPipelineRunDetails(4, 'Pipeline4Run4Details', 'repo4', '1.0.0'),
   missingArtifactPipelineRunDetails: createMockPipelineRunDetails(1, 'Pipeline1Run1Details', 'repo1', '1.0.0', false),
+  automatedPipelineRepo1RunDetails: createMockPipelineRunDetails(4, 'Pipeline4Run4Details', 'repo1', '1.0.0'),
 };
 
 const mockBuildTimelineFixtures = {
@@ -195,6 +198,7 @@ const mockBuildTimelineFixtures = {
 const mockReleasedVersionsFixtures = {
   pipeline1Run1Repo1: createMockReleasedVersion('repo1', 1, 'Pipeline1', 1, 'Pipeline1Run1'),
   pipeline1Run2Repo1: createMockReleasedVersion('repo1', 1, 'Pipeline1', 2, 'Pipeline1Run2'),
+  pipeline4Run4Repo1: createMockReleasedVersion('repo1', 4, 'Pipeline4', 4, 'Pipeline4Run4'),
   pipeline4Run4Repo4: createMockReleasedVersion('repo4', 4, 'Pipeline4', 4, 'Pipeline4Run4'),
 }
 
@@ -207,7 +211,7 @@ describe('azureDevOpsService', () => {
     jest.clearAllMocks();
     (console.error as jest.Mock).mockClear();
     clearCache();
-    
+
     // Reset config mock to default values
     mockConfig.manualReleaseDirectory = 'manual';
     mockConfig.automatedReleaseDirectory = 'automated';
@@ -231,7 +235,7 @@ describe('azureDevOpsService', () => {
       ];
 
       const releaseDirectories = ['manual'];
-      
+
       const result = __test__.filterReleasePipelines(mockPipelines, releaseDirectories);
       expect(result).toEqual([
         mockPipelineFixtures.manualReleasePipeline,
@@ -248,7 +252,7 @@ describe('azureDevOpsService', () => {
           mockPipelineFixtures.automatedReleasePipeline,
         ],
       };
-    
+
       const mockPipelineRuns = {
         value: [
           mockPipelineRunFixtures.manualPipelineRun,
@@ -264,7 +268,7 @@ describe('azureDevOpsService', () => {
 
       const mockBuildTimeline = {
         records: [
-          mockBuildTimelineFixtures.devDeploy
+          mockBuildTimelineFixtures.devDeploy,
         ]
       };
 
@@ -278,10 +282,10 @@ describe('azureDevOpsService', () => {
       mockPipelineRunsResponse(mockPipelineRuns);
       mockPipelineRunDetailsResponses(runDetailsMap);
       mockBuildTimelineResponse(mockBuildTimeline);
-      
+
       // Act
       const result = await getReleasedVersions(ENVIRONMENT.DEV);
-      
+
       // Assert
       expect(result).toEqual(releasedVersions);
     });
@@ -323,7 +327,7 @@ describe('azureDevOpsService', () => {
       mockPipelineResponse(mockPipelines);
       mockPipelineRunsResponse(mockPipelineRuns);
       mockPipelineRunDetailsResponses(runDetailsMap);
-      
+
       // Act
       const result = await getReleasedVersions(ENVIRONMENT.DEV);
 
@@ -350,7 +354,7 @@ describe('azureDevOpsService', () => {
       }
 
       const releasedVersions = [mockReleasedVersionsFixtures.pipeline1Run2Repo1];
-   
+
       mockPipelineResponse(mockPipelines);
       mockPipelineRunsResponse(mockPipelineRuns);
       mockPipelineRunDetailsResponses(runDetailsMap);
@@ -361,6 +365,50 @@ describe('azureDevOpsService', () => {
       // Assert
       expect(result).toEqual(releasedVersions);
     });
+
+    it('should group multiple pipelines for the same repo', async () => {
+      // Arrange
+      const mockPipelines = {
+        value: [
+          mockPipelineFixtures.manualReleasePipeline,
+          mockPipelineFixtures.automatedReleasePipeline,
+        ]
+      };
+
+      const mockPipelineRuns = {
+        value: [
+          mockPipelineRunFixtures.manualPipelineRun,
+          mockPipelineRunFixtures.automatedPipelineRun,
+        ]
+      };
+
+      const runDetailsMap = {
+        1: mockPipelineRunDetailsFixtures.manualPipelineRunDetails,
+        4: mockPipelineRunDetailsFixtures.automatedPipelineRepo1RunDetails,
+      }
+
+      const mockBuildTimeline = {
+        records: [
+          mockBuildTimelineFixtures.devDeploy,
+        ]
+      };
+
+      const releasedVersions = [
+        mockReleasedVersionsFixtures.pipeline4Run4Repo1,
+      ];
+
+      mockPipelineResponse(mockPipelines);
+      mockPipelineRunsResponse(mockPipelineRuns);
+      mockPipelineRunDetailsResponses(runDetailsMap);
+      mockBuildTimelineResponse(mockBuildTimeline);
+
+      // Act
+      const result = await getReleasedVersions(ENVIRONMENT.DEV);
+
+      // Assert
+      expect(result).toEqual(releasedVersions);
+
+    });
   });
 
   describe('error handling', () => {
@@ -368,12 +416,12 @@ describe('azureDevOpsService', () => {
       // Arrange
       const mockPipelinesResponse = {
         value: [
-          { id: 1, name: 'Pipeline1', folder: 'release/path' },
+          mockPipelineFixtures.invalidPathPipeline,
         ],
       };
 
       mockPipelineResponse(mockPipelinesResponse);
-      
+
       const mockGetPipelineRuns = AzureDevOpsClient.getPipelineRuns as jest.Mock;
       mockGetPipelineRuns.mockImplementation(() => Promise.resolve({ value: []}));
 
@@ -410,21 +458,58 @@ describe('azureDevOpsService', () => {
       // Act & Assert
       await expect(getReleasedVersions(ENVIRONMENT.DEV)).rejects.toThrow(ExternalAPIError);
     });
-    
+
     it('should throw NotFoundError when no pipelines are found', async () => {
       // Set up the mock implementation for this specific test
       const emptyPipelinesResponse: PipelineResponse = {
         value: []
       };
-      
+
       // Cast to jest.Mock to access mockResolvedValue
       const mockGetPipelines = AzureDevOpsClient.getPipelines as jest.Mock;
       mockGetPipelines.mockImplementation(() => Promise.resolve(emptyPipelinesResponse));
-  
+
       // Test that the function throws the expected error
-      await expect(getReleasedVersions(ENVIRONMENT.DEV)).rejects.toThrow(NotFoundError);
-      await expect(getReleasedVersions(ENVIRONMENT.DEV)).rejects.toThrow(/No pipelines found/);
+      await expect(getReleasedVersions(ENVIRONMENT.DEV)).rejects.toThrow(
+        expect.objectContaining({
+          constructor: NotFoundError,
+          message: expect.stringMatching(/No pipelines found/)
+        })
+      );
     });
+
+    it('should throw ExternalAPIError when build timeline fetch fails', async () => {
+      // Arrange
+      const mockPipelines = {
+        value: [mockPipelineFixtures.automatedReleasePipeline],
+      };
+
+      const mockPipelineRuns = {
+        value: [mockPipelineRunFixtures.automatedPipelineRun],
+      };
+
+      const runDetailsMap = {
+        4: mockPipelineRunDetailsFixtures.automatedPipelineRunDetails,
+      }
+
+      mockPipelineResponse(mockPipelines);
+      mockPipelineRunsResponse(mockPipelineRuns);
+      mockPipelineRunDetailsResponses(runDetailsMap);
+
+      const mockRejectedBuildTimelineResponse = AzureDevOpsClient.getBuildTimeline as jest.Mock;
+      mockRejectedBuildTimelineResponse.mockImplementation(() => Promise.reject());
+
+      // Act & Assert
+      await expect(getReleasedVersions(ENVIRONMENT.DEV)).rejects.toThrow(
+        expect.objectContaining({
+          constructor: ExternalAPIError,
+          message: expect.stringMatching(/Failed to fetch build pipeline/),
+          statusCode: HttpStatusCode.SERVICE_UNAVAILABLE,
+          code: ErrorCode.AZURE_BUILD_TIMELINE_RESULTS_ERROR
+        })
+      );
+
+    })
 
     it('should wrap unexpected errors in ExternalAPIError', async () => {
       // Arrange
@@ -433,16 +518,16 @@ describe('azureDevOpsService', () => {
           mockPipelineFixtures.manualReleasePipeline,
         ],
       };
-      
+
       mockPipelineResponse(mockPipelines);
-      
+
       // Mock getPipelineRuns to throw an unexpected error (not an AppError)
       // This simulates a case where the client returns successfully but something goes wrong during processing
       const mockGetPipelineRuns = AzureDevOpsClient.getPipelineRuns as jest.Mock;
       mockGetPipelineRuns.mockImplementation(() => {
         throw new Error('Unexpected processing error');
       });
-      
+
       // Act & Assert
       await expect(getReleasedVersions(ENVIRONMENT.DEV)).rejects.toThrow(ExternalAPIError);
       await expect(getReleasedVersions(ENVIRONMENT.DEV)).rejects.toThrow(/Failed to fetch released versions for environment/);
@@ -473,7 +558,7 @@ describe('azureDevOpsService', () => {
       mockPipelineRunsResponse(mockPipelineRuns);
       mockPipelineRunDetailsResponses(runDetailsMap);
     });
-    
+
     it('should use cached pipeline data when available', async () => {
       // Act - First call should hit the API
       await getReleasedVersions(ENVIRONMENT.DEV);
@@ -518,21 +603,21 @@ describe('azureDevOpsService', () => {
       // Clean up
       jest.useRealTimers();
     });
-    
-    it('calling clearCache() should remove the key from the cache when a key is provided', async () => {  
+
+    it('calling clearCache() should remove the key from the cache when a key is provided', async () => {
       // Act - Populate the cache for different environments
       // First call for DEV environment - will populate the cache
       await getReleasedVersions(ENVIRONMENT.DEV);
-      
+
       // Reset the call counts to make testing easier
       mockGetPipelinesRef.mockClear();
-      
+
       // Call clearCache with a specific pattern (DEV)
       clearCache('pipelines');
-      
+
       // Second call for DEV - should hit the API again since its cache was cleared
       await getReleasedVersions(ENVIRONMENT.DEV);
-      
+
       // Assert
       // We should see the getPipelines called only once (for DEV) since PROD is still cached
       expect(AzureDevOpsClient.getPipelines).toHaveBeenCalledTimes(1);
