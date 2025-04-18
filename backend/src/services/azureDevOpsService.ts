@@ -135,6 +135,39 @@ async function getReleasePipelines(): Promise<Pipeline[]> {
   return releasePipelines;
 }
 
+/**
+ * Find the most recent pipeline run that has a successful deployment stage for the given environment
+ */
+async function findSuccessfulPipelineRunByStage(
+  sortedRuns: PipelineRunResponse['value'],
+  environment: ENVIRONMENT,
+): Promise<PipelineRunResponse['value'][number] | null> {
+  const stageNameMap = new Map<ENVIRONMENT, string>([
+    [ENVIRONMENT.DEV, 'DevDeploy'],
+    [ENVIRONMENT.INT, 'IntDeploy'],
+  ]);
+
+  const stageName = stageNameMap.get(environment);
+  if (!stageName) return null;
+
+  // Find the first run that has a successful deployment stage
+  for (const run of sortedRuns) {
+    const buildTimelineRecord = await getBuildTimelineRecords(run.id);
+
+    // Check if the timeline contains a successful stage with the target name
+    const successfulStage = buildTimelineRecord.find(
+      (record) =>
+        record.parentId === null && record.name === stageName && record.result === 'succeeded',
+    );
+
+    if (successfulStage) {
+      return run; // Found a successful run
+    }
+  }
+
+  return null;
+}
+
 // Fetch all runs for one pipeline in a single batch
 async function getMostRecentReleasePipelineRunByEnvironment(
   pipeline: Pipeline,
@@ -188,39 +221,6 @@ async function getMostRecentReleasePipelineRunByEnvironment(
       version: ciArtifactPipeline?.version,
     },
   };
-}
-
-/**
- * Find the most recent pipeline run that has a successful deployment stage for the given environment
- */
-async function findSuccessfulPipelineRunByStage(
-  sortedRuns: PipelineRunResponse['value'],
-  environment: ENVIRONMENT,
-): Promise<PipelineRunResponse['value'][number] | null> {
-  const stageNameMap = new Map<ENVIRONMENT, string>([
-    [ENVIRONMENT.DEV, 'DevDeploy'],
-    [ENVIRONMENT.INT, 'IntDeploy'],
-  ]);
-
-  const stageName = stageNameMap.get(environment);
-  if (!stageName) return null;
-
-  // Find the first run that has a successful deployment stage
-  for (const run of sortedRuns) {
-    const buildTimelineRecord = await getBuildTimelineRecords(run.id);
-
-    // Check if the timeline contains a successful stage with the target name
-    const successfulStage = buildTimelineRecord.find(
-      (record) =>
-        record.parentId === null && record.name === stageName && record.result === 'succeeded',
-    );
-
-    if (successfulStage) {
-      return run; // Found a successful run
-    }
-  }
-
-  return null;
 }
 
 function getMostRecentRunPerRepo(pipelineRuns: PipelineRun[]): PipelineRun[] {

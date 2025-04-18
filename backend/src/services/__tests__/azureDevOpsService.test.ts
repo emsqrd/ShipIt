@@ -352,6 +352,19 @@ describe('azureDevOpsService', () => {
         // Assert
         expect(result).toEqual(null);
       });
+
+      it('should return null when attempting to find stages for unconfigured environments', async () => {
+        // Arrange
+        const mockPipelineRunsResponse = [
+          mockPipelineRunFixtures.noEnvPipelineRun4,
+        ];
+
+        // Act
+        const result = await __test__.findSuccessfulPipelineRunByStage(mockPipelineRunsResponse, ENVIRONMENT.PERF1);
+
+        // Assert
+        expect(result).toEqual(null);
+      })
     });
   });
 
@@ -556,31 +569,6 @@ describe('azureDevOpsService', () => {
 
         // Act
         const result = await getReleasedVersions(ENVIRONMENT.DEV);
-
-        // Assert
-        expect(result).toEqual([]);
-      });
-
-      it('should return null if there are automated pipeline runs for an environment that is not configured', async () => {
-        // Arrange
-        const mockPipelines = {
-          value: [mockPipelineFixtures.automatedReleasePipeline2],
-        };
-
-        const mockPipelineRuns = {
-          value: [mockPipelineRunFixtures.noEnvPipelineRun4]
-        };
-
-        const runDetailsMap = {
-          4: mockPipelineRunDetailsFixtures.pipelineRun4Repo4,
-        };
-
-        mockPipelineResponse(mockPipelines);
-        mockPipelineRunsResponse(mockPipelineRuns);
-        mockPipelineRunDetailsResponses(runDetailsMap);
-
-        // Act
-        const result = await getReleasedVersions(ENVIRONMENT.PERF1);
 
         // Assert
         expect(result).toEqual([]);
