@@ -6,6 +6,7 @@ import {
   BuildTimelineRecord,
   Pipeline,
   PipelineRun,
+  PipelineRunResponse,
   ReleasedVersion,
 } from '../types/AzureDevOpsTypes.js';
 import {
@@ -153,29 +154,7 @@ async function getMostRecentReleasePipelineRunByEnvironment(
   if (pipeline.folder === config.manualReleaseDirectory) {
     mostRecentPipelineRun = sortedRuns.find((run) => run.templateParameters?.env === environment);
   } else if (pipeline.folder === config.automatedReleaseDirectory) {
-    const stageNameMap = new Map<ENVIRONMENT, string>([
-      [ENVIRONMENT.DEV, 'DevDeploy'],
-      [ENVIRONMENT.INT, 'IntDeploy'],
-    ]);
-
-    const stageName = stageNameMap.get(environment);
-    if (!stageName) return null;
-
-    // Find the first run that has a successful deployment stage
-    for (const run of sortedRuns) {
-      const buildTimelineRecord = await getBuildTimelineRecords(run.id);
-
-      // Check if the timeline contains a successful stage with the target name
-      const successfulStage = buildTimelineRecord.find(
-        (record) =>
-          record.parentId === null && record.name === stageName && record.result === 'succeeded',
-      );
-
-      if (successfulStage) {
-        mostRecentPipelineRun = run;
-        break; // Found a successful run, stop searching
-      }
-    }
+    mostRecentPipelineRun = await findSuccessfulPipelineRunByStage(sortedRuns, environment);
   }
 
   if (!mostRecentPipelineRun) {
@@ -200,7 +179,7 @@ async function getMostRecentReleasePipelineRunByEnvironment(
     name: mostRecentPipelineRun.name,
     pipelineId: pipeline.id,
     pipelineName: pipeline.name,
-    environment: mostRecentPipelineRun.templateParameters?.env,
+    environment: mostRecentPipelineRun.templateParameters.env || environment,
     createdDate: mostRecentPipelineRun.createdDate,
     pipelineRunDetail: {
       id: pipelineRunDetails.id,
@@ -209,6 +188,39 @@ async function getMostRecentReleasePipelineRunByEnvironment(
       version: ciArtifactPipeline?.version,
     },
   };
+}
+
+/**
+ * Find the most recent pipeline run that has a successful deployment stage for the given environment
+ */
+async function findSuccessfulPipelineRunByStage(
+  sortedRuns: PipelineRunResponse['value'],
+  environment: ENVIRONMENT,
+): Promise<PipelineRunResponse['value'][number] | null> {
+  const stageNameMap = new Map<ENVIRONMENT, string>([
+    [ENVIRONMENT.DEV, 'DevDeploy'],
+    [ENVIRONMENT.INT, 'IntDeploy'],
+  ]);
+
+  const stageName = stageNameMap.get(environment);
+  if (!stageName) return null;
+
+  // Find the first run that has a successful deployment stage
+  for (const run of sortedRuns) {
+    const buildTimelineRecord = await getBuildTimelineRecords(run.id);
+
+    // Check if the timeline contains a successful stage with the target name
+    const successfulStage = buildTimelineRecord.find(
+      (record) =>
+        record.parentId === null && record.name === stageName && record.result === 'succeeded',
+    );
+
+    if (successfulStage) {
+      return run; // Found a successful run
+    }
+  }
+
+  return null;
 }
 
 function getMostRecentRunPerRepo(pipelineRuns: PipelineRun[]): PipelineRun[] {
@@ -284,6 +296,7 @@ export async function getReleasedVersions(environment: ENVIRONMENT): Promise<Rel
 export const __test__ = {
   filterReleasePipelines,
   getMostRecentRunPerRepo,
+  findSuccessfulPipelineRunByStage,
 };
 
 export default {

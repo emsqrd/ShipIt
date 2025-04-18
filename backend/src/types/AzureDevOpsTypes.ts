@@ -12,7 +12,7 @@ export type PipelineRunResponse = {
     id: number;
     name: string;
     templateParameters: {
-      env: string;
+      env?: string;
     };
     createdDate: string;
   }[];

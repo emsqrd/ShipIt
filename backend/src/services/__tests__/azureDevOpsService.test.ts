@@ -123,16 +123,13 @@ const createMockPipeline = (id: number, name: string, folder: string) => ({
   folder,
 });
 
-const createMockPipelineRun = (id: number, name: string, env: string, createdDate: string, pipelineId: number, pipelineName: string, pipelineFolder: string) => ({
+const createMockPipelineRun = (id: number, name: string, createdDate: string, env?: string | undefined) => ({
   id,
   name,
   createdDate,
-  templateParameters: { env },
-  pipeline: {
-    id: pipelineId,
-    name: pipelineName,
-    folder: pipelineFolder
-  }
+  templateParameters: env ? { 
+    env
+  } : {},
 });
 
 const createMockPipelineRunDetails = (
@@ -176,24 +173,25 @@ const createMockReleasedVersion = (repo: string, pipelineId: number, pipelineNam
 
 // Common test fixtures
 const mockPipelineFixtures = {
-  manualReleasePipeline: createMockPipeline(1, 'Pipeline1', 'manual'),
-  invalidPathPipeline: createMockPipeline(3, 'Pipeline3', 'invalid/path'),
-  automatedReleasePipeline: createMockPipeline(4, 'Pipeline4', 'automated'),
+  manualReleasePipeline1: createMockPipeline(1, 'Pipeline1', 'manual'),
+  automatedReleasePipeline2: createMockPipeline(2, 'Pipeline2', 'automated'),
+  invalidPathPipeline3: createMockPipeline(3, 'Pipeline3', 'invalid/path'),
+  manualReleasePipeline4: createMockPipeline(4, 'Pipeline4', 'manual'),
 };
 
 const mockPipelineRunFixtures = {
-  manualPipelineRun: createMockPipelineRun(1, 'Pipeline1Run1', 'dev', '01-01-2024', 1, 'Pipeline1', 'manual'),
-  invalidEnvPipelineRun: createMockPipelineRun(1, 'Pipeline1Run1', 'dev1', '01-01-2025', 1, 'Pipeline1', 'manual'),
-  newerManualPipelineRun: createMockPipelineRun(2, 'Pipeline1Run2', 'dev', '01-01-2025', 1, 'Pipeline1', 'manual'),
-  automatedPipelineRun: createMockPipelineRun(4, 'Pipeline4Run4', '', '01-01-2025', 4, 'Pipeline4', 'automated'),
+  pipelineRun1: createMockPipelineRun(1, 'PipelineRun1', '01-01-2024', 'dev'),
+  invalidEnvPipelineRun2: createMockPipelineRun(2, 'PipelineRun2', '01-01-2025', 'dev1'),
+  newerPipelineRun3: createMockPipelineRun(3, 'PipelineRun3', '01-01-2025', 'dev'),
+  noEnvPipelineRun4: createMockPipelineRun(4, 'PipelineRun4', '01-01-2025'),
 };
 
 const mockPipelineRunDetailsFixtures = {
-  manualPipelineRunDetails: createMockPipelineRunDetails(1, 'Pipeline1Run1Details', 'repo1', '1.0.0'),
-  newerManualPipelineRunDetails: createMockPipelineRunDetails(2, 'Pipeline1Run2', 'repo1', '1.0.0'),
-  automatedPipelineRunDetails: createMockPipelineRunDetails(4, 'Pipeline4Run4Details', 'repo4', '1.0.0'),
-  missingArtifactPipelineRunDetails: createMockPipelineRunDetails(1, 'Pipeline1Run1Details', 'repo1', '1.0.0', false),
-  automatedPipelineRepo1RunDetails: createMockPipelineRunDetails(4, 'Pipeline4Run4Details', 'repo1', '1.0.0'),
+  pipelineRun1Repo1: createMockPipelineRunDetails(1, 'PipelineRun1Details', 'repo1', '1.0.0'),
+  pipelineRun3Repo1: createMockPipelineRunDetails(3, 'PipelineRun3Details', 'repo1', '1.0.0'),
+  pipelineRun4Repo1: createMockPipelineRunDetails(4, 'PipelineRun4Details', 'repo1', '1.0.0'),
+  pipelineRun4Repo4: createMockPipelineRunDetails(4, 'PipelineRun4Details', 'repo4', '1.0.0'),
+  missingArtifactPipelineRunDetails: createMockPipelineRunDetails(1, 'PipelineRun1Details', 'repo1', '1.0.0', false),
 };
 
 const mockBuildTimelineFixtures = {
@@ -202,10 +200,12 @@ const mockBuildTimelineFixtures = {
 }
 
 const mockReleasedVersionsFixtures = {
-  pipeline1Run1Repo1: createMockReleasedVersion('repo1', 1, 'Pipeline1', 1, 'Pipeline1Run1'),
-  pipeline1Run2Repo1: createMockReleasedVersion('repo1', 1, 'Pipeline1', 2, 'Pipeline1Run2'),
-  pipeline4Run4Repo1: createMockReleasedVersion('repo1', 4, 'Pipeline4', 4, 'Pipeline4Run4'),
-  pipeline4Run4Repo4: createMockReleasedVersion('repo4', 4, 'Pipeline4', 4, 'Pipeline4Run4'),
+  pipeline1Run1Repo1: createMockReleasedVersion('repo1', 1, 'Pipeline1', 1, 'PipelineRun1'),
+  pipeline1Run2Repo1: createMockReleasedVersion('repo1', 1, 'Pipeline1', 2, 'PipelineRun2'),
+  pipeline1Run3Repo1: createMockReleasedVersion('repo1', 1, 'Pipeline1', 3, 'PipelineRun3'),
+  pipeline2Run4Repo1: createMockReleasedVersion('repo1', 2, 'Pipeline2', 4, 'PipelineRun4'),
+  pipeline2Run4Repo4: createMockReleasedVersion('repo4', 2, 'Pipeline2', 4, 'PipelineRun4'),
+  pipeline4Run3Repo1: createMockReleasedVersion('repo1', 1, 'Pipeline1', 3, 'PipelineRun3'),
 }
 
 // Mock console.error to prevent test output pollution
@@ -232,15 +232,15 @@ describe('azureDevOpsService', () => {
     describe('filterReleasePipelines', () => {
       it('should filter pipelines based on folder criteria', async() => {
         const mockPipelines = [
-          mockPipelineFixtures.manualReleasePipeline,
-          mockPipelineFixtures.invalidPathPipeline,
+          mockPipelineFixtures.manualReleasePipeline1,
+          mockPipelineFixtures.invalidPathPipeline3,
         ];
 
         const releaseDirectories = ['manual'];
 
         const result = __test__.filterReleasePipelines(mockPipelines, releaseDirectories);
         expect(result).toEqual([
-          mockPipelineFixtures.manualReleasePipeline,
+          mockPipelineFixtures.manualReleasePipeline1,
         ]);
       });
     });
@@ -250,19 +250,19 @@ describe('azureDevOpsService', () => {
         // Arrange
         const olderRun = {
           id: 1,
-          createdDate: '2024-01-01T10:00:00Z',
+          createdDate: '01-01-2024',
           pipelineRunDetail: { repo: 'repo1' },
         } as PipelineRun;
         
         const newerRun = {
           id: 2,
-          createdDate: '2024-01-02T10:00:00Z',
+          createdDate: '01-02-2024',
           pipelineRunDetail: { repo: 'repo1' },
         } as PipelineRun;
         
         const anotherRepoRun = {
           id: 3,
-          createdDate: '2024-01-01T10:00:00Z',
+          createdDate: '01-01-2024',
           pipelineRunDetail: { repo: 'repo2' },
         } as PipelineRun;
         
@@ -289,13 +289,13 @@ describe('azureDevOpsService', () => {
         // Arrange
         const sameTimeRun1 = {
           id: 1,
-          createdDate: '2024-01-01T10:00:00Z',
+          createdDate: '01-01-2024',
           pipelineRunDetail: { repo: 'repo1' },
         } as PipelineRun;
         
         const sameTimeRun2 = {
           id: 2,
-          createdDate: '2024-01-01T10:00:00Z',
+          createdDate: '01-01-2024',
           pipelineRunDetail: { repo: 'repo1' },
         } as PipelineRun;
         
@@ -311,30 +311,97 @@ describe('azureDevOpsService', () => {
         expect(result[0].id).toBe(sameTimeRun1.id);
       });
     });
+
+    describe('findSuccessfulPipelineRunByStage', () => {
+      it('should return a run with a successful stage', async () => {
+        // Arrange        
+        const mockPiplelineRunResponse = [
+          mockPipelineRunFixtures.noEnvPipelineRun4,
+        ];
+
+        const mockBuildTimeline = {
+          records: [
+            mockBuildTimelineFixtures.devDeploy,
+          ]
+        };
+
+        mockBuildTimelineResponse(mockBuildTimeline);
+
+        // Act
+        const result = await __test__.findSuccessfulPipelineRunByStage(mockPiplelineRunResponse, ENVIRONMENT.DEV);
+
+        // Assert
+        expect(result).toEqual(mockPipelineRunFixtures.noEnvPipelineRun4)
+      });
+
+      it('should return null if no successful stages are found for any runs', async () => {
+        // Arrange        
+        const mockPiplelineRunResponse = [
+          mockPipelineRunFixtures.pipelineRun1,
+        ];
+
+        const mockBuildTimeline = {
+          records: [],
+        };
+
+        mockBuildTimelineResponse(mockBuildTimeline);
+
+        // Act
+        const result = await __test__.findSuccessfulPipelineRunByStage(mockPiplelineRunResponse, ENVIRONMENT.DEV);
+
+        // Assert
+        expect(result).toEqual(null);
+      });
+    });
   });
 
   describe('getReleasedVersions', () => {
     describe('successful pipeline retrieval', () => {
-      it('should return automated pipelines if they exist for a repo', async () => {
+      it('should return ReleasedVersions with manual pipelines if they exist', async() => {
+        // Arrange
+        const mockPipelines = {
+          value: [mockPipelineFixtures.manualReleasePipeline1],
+        }
+
+        const mockPipelineRuns = {
+          value: [mockPipelineRunFixtures.pipelineRun1],
+        }
+
+        const runDetailsMap = {
+          1: mockPipelineRunDetailsFixtures.pipelineRun1Repo1,
+        };
+
+        const releasedVersions = [
+          mockReleasedVersionsFixtures.pipeline1Run1Repo1,
+        ];
+
+        mockPipelineResponse(mockPipelines);
+        mockPipelineRunsResponse(mockPipelineRuns);
+        mockPipelineRunDetailsResponses(runDetailsMap);
+
+        // Act
+        const result = await getReleasedVersions(ENVIRONMENT.DEV);
+
+        // Assert
+        expect(result).toEqual(releasedVersions);
+      });
+
+      it('should return ReleasedVersions with automated pipelines if they exist', async () => {
         // Arrange
         const mockPipelines = {
           value: [
-            mockPipelineFixtures.manualReleasePipeline,
-            mockPipelineFixtures.automatedReleasePipeline,
+            mockPipelineFixtures.automatedReleasePipeline2,
           ],
         };
 
         const mockPipelineRuns = {
           value: [
-            mockPipelineRunFixtures.manualPipelineRun,
-            mockPipelineRunFixtures.automatedPipelineRun
+            mockPipelineRunFixtures.noEnvPipelineRun4
           ]
         };
 
-        // Create a map of run IDs to their corresponding pipeline run details
         const runDetailsMap = {
-          1: mockPipelineRunDetailsFixtures.manualPipelineRunDetails,
-          4: mockPipelineRunDetailsFixtures.automatedPipelineRunDetails
+          4: mockPipelineRunDetailsFixtures.pipelineRun4Repo4
         };
 
         const mockBuildTimeline = {
@@ -344,8 +411,7 @@ describe('azureDevOpsService', () => {
         };
 
         const releasedVersions = [
-          mockReleasedVersionsFixtures.pipeline1Run1Repo1,
-          mockReleasedVersionsFixtures.pipeline4Run4Repo4,
+          mockReleasedVersionsFixtures.pipeline2Run4Repo4,
         ];
 
         // Use the helper functions to set up the mocks
@@ -364,22 +430,22 @@ describe('azureDevOpsService', () => {
       it('should return most recent pipeline run for each pipeline', async () => {
         // Arrange
         const mockPipelines = {
-          value: [mockPipelineFixtures.manualReleasePipeline],
+          value: [mockPipelineFixtures.manualReleasePipeline1],
         };
 
         const mockPipelineRuns = {
           value: [
-            mockPipelineRunFixtures.manualPipelineRun,
-            mockPipelineRunFixtures.newerManualPipelineRun,
+            mockPipelineRunFixtures.pipelineRun1,
+            mockPipelineRunFixtures.newerPipelineRun3,
           ]
         };
 
         const runDetailsMap = {
-          1: mockPipelineRunDetailsFixtures.manualPipelineRunDetails,
-          2: mockPipelineRunDetailsFixtures.newerManualPipelineRunDetails,
+          1: mockPipelineRunDetailsFixtures.pipelineRun1Repo1,
+          3: mockPipelineRunDetailsFixtures.pipelineRun3Repo1,
         }
 
-        const releasedVersions = [mockReleasedVersionsFixtures.pipeline1Run2Repo1];
+        const releasedVersions = [mockReleasedVersionsFixtures.pipeline1Run3Repo1];
 
         mockPipelineResponse(mockPipelines);
         mockPipelineRunsResponse(mockPipelineRuns);
@@ -396,37 +462,30 @@ describe('azureDevOpsService', () => {
         // Arrange
         const mockPipelines = {
           value: [
-            mockPipelineFixtures.manualReleasePipeline,
-            mockPipelineFixtures.automatedReleasePipeline,
+            mockPipelineFixtures.manualReleasePipeline1,
+            mockPipelineFixtures.manualReleasePipeline4,
           ]
         };
 
         const mockPipelineRuns = {
           value: [
-            mockPipelineRunFixtures.manualPipelineRun,
-            mockPipelineRunFixtures.automatedPipelineRun,
+            mockPipelineRunFixtures.pipelineRun1,
+            mockPipelineRunFixtures.newerPipelineRun3,
           ]
         };
 
         const runDetailsMap = {
-          1: mockPipelineRunDetailsFixtures.manualPipelineRunDetails,
-          4: mockPipelineRunDetailsFixtures.automatedPipelineRepo1RunDetails,
+          1: mockPipelineRunDetailsFixtures.pipelineRun1Repo1,
+          3: mockPipelineRunDetailsFixtures.pipelineRun3Repo1,
         }
 
-        const mockBuildTimeline = {
-          records: [
-            mockBuildTimelineFixtures.devDeploy,
-          ]
-        };
-
         const releasedVersions = [
-          mockReleasedVersionsFixtures.pipeline4Run4Repo1,
+          mockReleasedVersionsFixtures.pipeline4Run3Repo1,
         ];
 
         mockPipelineResponse(mockPipelines);
         mockPipelineRunsResponse(mockPipelineRuns);
         mockPipelineRunDetailsResponses(runDetailsMap);
-        mockBuildTimelineResponse(mockBuildTimeline);
 
         // Act
         const result = await getReleasedVersions(ENVIRONMENT.DEV);
@@ -440,11 +499,11 @@ describe('azureDevOpsService', () => {
       it('should return empty array if no pipeline runs exist for the environment', async () => {
         // Arrange
         const mockPipelines = {
-          value: [mockPipelineFixtures.manualReleasePipeline],
+          value: [mockPipelineFixtures.manualReleasePipeline1],
         };
 
         const mockPipelineRuns = {
-          value: [mockPipelineRunFixtures.invalidEnvPipelineRun]
+          value: [mockPipelineRunFixtures.invalidEnvPipelineRun2]
         };
 
         mockPipelineResponse(mockPipelines);
@@ -460,7 +519,7 @@ describe('azureDevOpsService', () => {
       it('should return empty array if no pipeline runs exist for a pipeline', async () => {
         // Arrange
         const mockPipelines = {
-          value: [mockPipelineFixtures.manualReleasePipeline],
+          value: [mockPipelineFixtures.manualReleasePipeline1],
         };
 
         const mockPipelineRuns = {
@@ -480,11 +539,11 @@ describe('azureDevOpsService', () => {
       it('should return empty array if no artifact pipelines exist for pipeline runs', async () => {
         // Arrange
         const mockPipelines = {
-          value: [mockPipelineFixtures.manualReleasePipeline],
+          value: [mockPipelineFixtures.manualReleasePipeline1],
         };
 
         const mockPipelineRuns = {
-          value: [mockPipelineRunFixtures.manualPipelineRun]
+          value: [mockPipelineRunFixtures.pipelineRun1]
         };
 
         const runDetailsMap = {
@@ -505,15 +564,15 @@ describe('azureDevOpsService', () => {
       it('should return null if there are automated pipeline runs for an environment that is not configured', async () => {
         // Arrange
         const mockPipelines = {
-          value: [mockPipelineFixtures.automatedReleasePipeline],
+          value: [mockPipelineFixtures.automatedReleasePipeline2],
         };
 
         const mockPipelineRuns = {
-          value: [mockPipelineRunFixtures.automatedPipelineRun]
+          value: [mockPipelineRunFixtures.noEnvPipelineRun4]
         };
 
         const runDetailsMap = {
-          4: mockPipelineRunDetailsFixtures.automatedPipelineRunDetails,
+          4: mockPipelineRunDetailsFixtures.pipelineRun4Repo4,
         };
 
         mockPipelineResponse(mockPipelines);
@@ -534,7 +593,7 @@ describe('azureDevOpsService', () => {
       // Arrange
       const mockPipelinesResponse = {
         value: [
-          mockPipelineFixtures.invalidPathPipeline,
+          mockPipelineFixtures.invalidPathPipeline3,
         ],
       };
 
@@ -554,7 +613,7 @@ describe('azureDevOpsService', () => {
       // Set up mock data that will NOT match the criteria
       const mockReleasePipelinesResponse = {
         value: [
-          mockPipelineFixtures.invalidPathPipeline
+          mockPipelineFixtures.invalidPathPipeline3
         ],
       };
 
@@ -599,15 +658,15 @@ describe('azureDevOpsService', () => {
     it('should throw ExternalAPIError when build timeline fetch fails', async () => {
       // Arrange
       const mockPipelines = {
-        value: [mockPipelineFixtures.automatedReleasePipeline],
+        value: [mockPipelineFixtures.automatedReleasePipeline2],
       };
 
       const mockPipelineRuns = {
-        value: [mockPipelineRunFixtures.automatedPipelineRun],
+        value: [mockPipelineRunFixtures.noEnvPipelineRun4],
       };
 
       const runDetailsMap = {
-        4: mockPipelineRunDetailsFixtures.automatedPipelineRunDetails,
+        4: mockPipelineRunDetailsFixtures.pipelineRun4Repo4,
       }
 
       mockPipelineResponse(mockPipelines);
@@ -633,7 +692,7 @@ describe('azureDevOpsService', () => {
       // Arrange
       const mockPipelines = {
         value: [
-          mockPipelineFixtures.manualReleasePipeline,
+          mockPipelineFixtures.manualReleasePipeline1,
         ],
       };
 
@@ -658,18 +717,18 @@ describe('azureDevOpsService', () => {
       // Arrange
       const mockPipelines = {
         value: [
-          mockPipelineFixtures.manualReleasePipeline,
+          mockPipelineFixtures.manualReleasePipeline1,
         ],
       };
 
       const mockPipelineRuns = {
         value: [
-          mockPipelineRunFixtures.manualPipelineRun,
+          mockPipelineRunFixtures.pipelineRun1,
         ]
       };
 
       const runDetailsMap = {
-        1: mockPipelineRunDetailsFixtures.manualPipelineRunDetails,
+        1: mockPipelineRunDetailsFixtures.pipelineRun1Repo1,
       }
 
       mockPipelineResponse(mockPipelines);
