@@ -93,6 +93,8 @@ describe('ConfigService', () => {
       // Set up environment with all required variables
       process.env.AZURE_BASE_URL = 'https://dev.azure.com/myorg';
       process.env.AZURE_PAT = 'test-pat';
+      process.env.MANUAL_RELEASE_DIRECTORY = 'manual-dir';
+      process.env.AUTOMATED_RELEASE_DIRECTORY = 'automated-dir';
       
       // Import the module fresh with the current environment variables
       const configService = (await import('../configService.js')).default;

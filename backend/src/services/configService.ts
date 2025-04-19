@@ -7,7 +7,22 @@ class ConfigService {
   readonly automatedReleaseDirectory: string = process.env.AUTOMATED_RELEASE_DIRECTORY || '';
 
   validate() {
-    if (!this.azureBaseUrl || !this.azurePat) {
+    // Add this to your app startup code
+    // eslint-disable-next-line no-console
+    console.log('Configuration values being used:', {
+      manualReleaseDir: process.env.MANUAL_RELEASE_DIRECTORY || 'NOT SET',
+      automatedReleaseDir: process.env.AUTOMATED_RELEASE_DIRECTORY || 'NOT SET',
+      azureBaseUrl: process.env.AZURE_BASE_URL || 'NOT SET',
+      azurePat: process.env.AZURE_PAT ? 'SET' : 'NOT SET',
+      port: process.env.PORT || 'NOT SET',
+    });
+
+    if (
+      !this.azureBaseUrl ||
+      !this.azurePat ||
+      !this.manualReleaseDirectory ||
+      !this.automatedReleaseDirectory
+    ) {
       throw new Error(
         `Missing required environment variables: ${[
           !this.azureBaseUrl && 'azureBaseUrl',
