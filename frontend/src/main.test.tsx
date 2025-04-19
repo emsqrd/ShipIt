@@ -13,6 +13,7 @@ vi.mock('./App', () => ({
 describe('main.tsx', () => {
   const mockRoot = {
     render: vi.fn(),
+    unmount: vi.fn(),
   };
 
   beforeEach(() => {
@@ -20,7 +21,7 @@ describe('main.tsx', () => {
     document.body.innerHTML = '<div id="root"></div>';
 
     // Mock createRoot to return our mockRoot
-    vi.mocked(ReactDOM.createRoot).mockReturnValue(mockRoot as any);
+    vi.mocked(ReactDOM.createRoot).mockReturnValue(mockRoot as ReactDOM.Root);
   });
 
   afterEach(() => {

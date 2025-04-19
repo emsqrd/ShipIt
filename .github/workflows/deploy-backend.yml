@@ -26,6 +26,12 @@ jobs:
         with:
           node-version: '20.17.0'
 
+      - name: Install root dependencies
+        run: npm install --ignore-scripts
+
+      - name: Run husky install explicitly
+        run: npx husky install
+
       - name: Install npm dependencies
         working-directory: backend
         run: |

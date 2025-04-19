@@ -15,7 +15,8 @@ export interface Environment {
   PORT: number;
   AZURE_BASE_URL: string;
   AZURE_PAT: string;
-  RELEASE_PIPELINE_FOLDER: string;
+  MANUAL_RELEASE_DIRECTORY: string;
+  AUTOMATED_RELEASE_DIRECTORY: string;
   NODE_ENV: NodeEnv;
 }
 
@@ -40,7 +41,12 @@ if (result.error) {
 }
 
 // Validate required environment variables
-const requiredEnvVars = ['AZURE_BASE_URL', 'AZURE_PAT'];
+const requiredEnvVars = [
+  'AZURE_BASE_URL',
+  'AZURE_PAT',
+  'MANUAL_RELEASE_DIRECTORY',
+  'AUTOMATED_RELEASE_DIRECTORY',
+];
 const missingVars = requiredEnvVars.filter((varName) => !process.env[varName]);
 
 if (missingVars.length > 0) {
@@ -53,7 +59,6 @@ if (missingVars.length > 0) {
 
 // Set default values for optional variables with proper type coercion
 process.env.PORT = String(process.env.PORT || 3000);
-process.env.RELEASE_PIPELINE_FOLDER = process.env.RELEASE_PIPELINE_FOLDER || '\\RCT-CD';
 
 const nodeEnv = process.env.NODE_ENV || 'development';
 if (!['development', 'production'].includes(nodeEnv)) {
@@ -66,6 +71,7 @@ export const env: Environment = {
   PORT: parseInt(process.env.PORT, 10),
   AZURE_BASE_URL: process.env.AZURE_BASE_URL!,
   AZURE_PAT: process.env.AZURE_PAT!,
-  RELEASE_PIPELINE_FOLDER: process.env.RELEASE_PIPELINE_FOLDER,
+  MANUAL_RELEASE_DIRECTORY: process.env.MANUAL_RELEASE_DIRECTORY!,
+  AUTOMATED_RELEASE_DIRECTORY: process.env.AUTOMATED_RELEASE_DIRECTORY!,
   NODE_ENV: process.env.NODE_ENV as NodeEnv,
 };

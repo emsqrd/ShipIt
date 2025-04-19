@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
-import express, { Express } from 'express';
+import express, { Express, NextFunction, Request, RequestHandler, Response } from 'express';
 import request from 'supertest';
 import { ENVIRONMENT } from '../../enums/environment';
 import { ReleasedVersion } from '../../types/AzureDevOpsTypes';
@@ -23,14 +23,15 @@ const getReleasedVersionsMock = AzureDevOpsService.getReleasedVersions as jest.M
 
 // Also mock the error handler middleware
 jest.mock('../../middleware/errorHandler.js', () => {
-  const catchAsyncImpl = (fn) => async (req, res, next) => {
+  
+  const catchAsyncImpl = (fn: RequestHandler) => async (req: Request, res: Response, next: NextFunction) => {
     try {
       await fn(req, res, next);
-    } catch (error) {
-      if (error.statusCode === 400) {
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'statusCode' in error && error.statusCode === 400) {
         res.status(400).json({
           status: 'error',
-          message: error.message,
+          message: error && typeof error === 'object' && 'message' in error ? error.message : 'Unknown error',
         });
       } else {
         next(error);

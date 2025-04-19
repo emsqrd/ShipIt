@@ -4,7 +4,6 @@ export type PipelineResponse = {
     id: number;
     name: string;
     folder: string;
-    url: string;
   }[];
 };
 
@@ -13,40 +12,36 @@ export type PipelineRunResponse = {
     id: number;
     name: string;
     templateParameters: {
-      env: string;
+      env?: string;
     };
     createdDate: string;
-    pipeline: {
-      id: number;
-      name: string;
-      folder: string;
-      url: string;
-    };
   }[];
 };
 
 export type PipelineRunDetailResponse = {
   id: number;
   name: string;
-  pipeline: {
-    id: number;
-    name: string;
-    folder: string;
-    url: string;
-  };
   resources: {
     pipelines: {
       ['ci-artifact-pipeline']: {
         pipeline: {
-          id: number;
           name: string;
-          folder: string;
-          url: string;
         };
         version: string;
       };
     };
   };
+};
+
+export type BuildTimelineResponse = {
+  records: {
+    id: string;
+    parentId: string | null;
+    type: string;
+    name: string;
+    state: string;
+    result: string;
+  }[];
 };
 
 // Domain Pipeline Types
@@ -59,9 +54,10 @@ export type Pipeline = {
 export type PipelineRun = {
   id: number;
   name: string;
+  pipelineId: number;
+  pipelineName: string;
   environment: string;
   createdDate: string;
-  pipeline: Pipeline;
   pipelineRunDetail: PipelineRunDetail;
 };
 
@@ -70,6 +66,15 @@ export type PipelineRunDetail = {
   name: string;
   repo: string;
   version: string;
+};
+
+export type BuildTimelineRecord = {
+  id: string;
+  parentId: string | null;
+  type: string;
+  name: string;
+  state: string;
+  result: string;
 };
 
 // Domain Release Types

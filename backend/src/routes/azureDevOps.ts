@@ -3,7 +3,6 @@ import express from 'express';
 import { ENVIRONMENT } from '../enums/environment.js';
 import { catchAsync } from '../middleware/errorHandler.js';
 import { getReleasedVersions } from '../services/azureDevOpsService.js';
-import { ReleasedVersion } from '../types/AzureDevOpsTypes.js';
 import { RequestValidationError } from '../utils/errors.js';
 
 // Define type for the expected query parameters
@@ -38,8 +37,7 @@ router.get(
       );
     }
 
-    //TODO: After azureDevOpsService.js is refactored to ts come back and remove the type assertion
-    const releasedVersions: ReleasedVersion[] = await getReleasedVersions(environment);
+    const releasedVersions = await getReleasedVersions(environment);
 
     res.json(releasedVersions);
   }),
