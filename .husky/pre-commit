@@ -4,11 +4,13 @@ ROOT_DIR=$(pwd)
 # Run frontend pre-commit hook
 echo "Running frontend pre-commit hooks..."
 cd "$ROOT_DIR/frontend"
+npm run lint
 npm run build
 npm run test
 
 # Run backend pre-commit hook
 echo "Running backend pre-commit hooks..."
 cd "$ROOT_DIR/backend"
+npm run lint
 npm run build
 npm run test
