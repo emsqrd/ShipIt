@@ -30,12 +30,8 @@ type TestPipelineRunDetailResponse = {
 
 // Create a configurable mock object for ConfigService
 const mockConfig = {
-  manualReleaseDirectory: 'manual',
-  automatedReleaseDirectory: 'automated',
-  azureBaseUrl: 'https://mock-azure-url',
-  azurePat: 'mock-pat',
-  port: 3000,
-  validate: jest.fn()
+  MANUAL_RELEASE_DIRECTORY: 'manual',
+  AUTOMATED_RELEASE_DIRECTORY: 'automated',
 };
 
 // Mock the configService module to return our configurable mockConfig object
@@ -219,8 +215,8 @@ describe('azureDevOpsService', () => {
     clearCache();
 
     // Reset config mock to default values
-    mockConfig.manualReleaseDirectory = 'manual';
-    mockConfig.automatedReleaseDirectory = 'automated';
+    mockConfig.MANUAL_RELEASE_DIRECTORY = 'manual';
+    mockConfig.AUTOMATED_RELEASE_DIRECTORY = 'automated';
   });
 
   afterAll(() => {

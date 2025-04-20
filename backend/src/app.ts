@@ -1,15 +1,15 @@
-// Import environment variables first - before any other imports
-import './config/env.js';
-
 import cors from 'cors';
+import 'dotenv/config';
 import express from 'express';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 
 import { errorHandler } from './middleware/errorHandler.js';
 import azureDevOpsRouter from './routes/azureDevOps.js';
-import config from './services/configService.js';
+import { ConfigService } from './services/configService.js';
 import { NotFoundError } from './utils/errors.js';
+
+const config = ConfigService.fromEnvironment(process.env);
 
 // Validate configuration before configuring the app
 config.validate();
@@ -38,7 +38,7 @@ app.get('/api/health', (req, res) => {
   res.status(200).json({
     status: 'UP',
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development',
+    environment: config.NODE_ENV,
   });
 });
 
@@ -59,4 +59,5 @@ app.use('*', (req, res, next) => {
 // @ts-expect-error - Express error handler types are complex
 app.use(errorHandler);
 
+export { config };
 export default app;

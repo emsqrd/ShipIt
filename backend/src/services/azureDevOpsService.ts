@@ -123,7 +123,7 @@ async function getReleasePipelines(): Promise<Pipeline[]> {
   }
 
   // Define the release directories we want to filter by
-  const releaseDirectories = [config.manualReleaseDirectory, config.automatedReleaseDirectory];
+  const releaseDirectories = [config.MANUAL_RELEASE_DIRECTORY, config.AUTOMATED_RELEASE_DIRECTORY];
 
   // Filter pipelines that have folders matching our release directories
   const releasePipelines = filterReleasePipelines(pipelines, releaseDirectories);
@@ -184,9 +184,9 @@ async function getMostRecentReleasePipelineRunByEnvironment(
   );
 
   // Get the most recent run for the environment
-  if (pipeline.folder === config.manualReleaseDirectory) {
+  if (pipeline.folder === config.MANUAL_RELEASE_DIRECTORY) {
     mostRecentPipelineRun = sortedRuns.find((run) => run.templateParameters?.env === environment);
-  } else if (pipeline.folder === config.automatedReleaseDirectory) {
+  } else if (pipeline.folder === config.AUTOMATED_RELEASE_DIRECTORY) {
     mostRecentPipelineRun = await findSuccessfulPipelineRunByStage(sortedRuns, environment);
   }
 

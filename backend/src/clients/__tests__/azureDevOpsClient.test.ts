@@ -1,6 +1,6 @@
 const mockConfig = {
-  azureBaseUrl: 'https://dev.azure.com/test',
-  azurePat: 'test-pat',
+  AZURE_BASE_URL: 'https://dev.azure.com/test',
+  AZURE_PAT: 'test-pat',
 };
 
 // Mock the config service immediately
@@ -58,21 +58,9 @@ describe('AzureDevOpsClient', () => {
     jest.resetAllMocks();
   });
 
-  describe('constructor', () => {
-    it('should use default baseUrl from config when not provided', () => {
-      expect(client.baseUrl).toBe(mockConfig.azureBaseUrl);
-    });
-
-    it('should use custom baseUrl when provided', () => {
-      const customUrl = 'https://custom.azure.com';
-      const customClient = new AzureDevOpsClient(customUrl);
-      expect(customClient.baseUrl).toBe(customUrl);
-    });
-  });
-
   describe('API methods', () => {
     const defaultHeaders = {
-      Authorization: `Basic ${mockConfig.azurePat}`,
+      Authorization: `Basic ${mockConfig.AZURE_PAT}`,
       'Content-Type': 'application/json',
     };
 
@@ -98,7 +86,7 @@ describe('AzureDevOpsClient', () => {
         await client.getPipelines();
 
         expect(fetch).toHaveBeenCalledWith(
-          `${mockConfig.azureBaseUrl}/pipelines?api-version=7.1`,
+          `${client.baseUrl}/pipelines?api-version=7.1`,
           expect.objectContaining({
             method: HttpMethod.GET,
             headers: defaultHeaders,
@@ -138,7 +126,7 @@ describe('AzureDevOpsClient', () => {
         await client.getPipelineRuns(pipelineId);
 
         expect(fetch).toHaveBeenCalledWith(
-          `${mockConfig.azureBaseUrl}/pipelines/${pipelineId}/runs?api-version=7.1`,
+          `${client.baseUrl}/pipelines/${pipelineId}/runs?api-version=7.1`,
           expect.objectContaining({
             method: HttpMethod.GET,
             headers: defaultHeaders,
@@ -184,7 +172,7 @@ describe('AzureDevOpsClient', () => {
         await client.getPipelineRunDetails(pipelineId, runId);
 
         expect(fetch).toHaveBeenCalledWith(
-          `${mockConfig.azureBaseUrl}/pipelines/${pipelineId}/runs/${runId}?api-version=7.1`,
+          `${client.baseUrl}/pipelines/${pipelineId}/runs/${runId}?api-version=7.1`,
           expect.objectContaining({
             method: HttpMethod.GET,
             headers: defaultHeaders,
@@ -226,7 +214,7 @@ describe('AzureDevOpsClient', () => {
         await client.getBuildTimeline(buildId);
 
         expect(fetch).toHaveBeenCalledWith(
-          `${mockConfig.azureBaseUrl}/build/builds/${buildId}/timeline?api-version=7.1`,
+          `${client.baseUrl}/build/builds/${buildId}/timeline?api-version=7.1`,
           expect.objectContaining({
             method: HttpMethod.GET,
             headers: defaultHeaders,

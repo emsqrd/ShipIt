@@ -1,4 +1,5 @@
 import { afterAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
+import { ConfigService } from '../configService.js';
 
 // Store original environment variables
 const originalEnv = { ...process.env };
@@ -20,84 +21,78 @@ describe('ConfigService', () => {
 
   describe('initialization', () => {
     it('should use default values when environment variables are not set', async () => {
-      // Clear environment variables that might interfere with this test
-      delete process.env.PORT;
-      delete process.env.AZURE_BASE_URL;
-      delete process.env.AZURE_PAT;
-      delete process.env.MANUAL_RELEASE_DIRECTORY;
+      const configService = ConfigService.fromEnvironment({});
       
-      // Import the module fresh with the current environment variables
-      const configService = (await import('../configService.js')).default;
-      
-      expect(configService.port).toBe(3000);
-      expect(configService.azureBaseUrl).toBe('');
-      expect(configService.azurePat).toBe('');
-      expect(configService.manualReleaseDirectory).toBe('');
+      // Verify all properties have their expected default values
+      expect(configService.PORT).toBe(3000);
+      expect(configService.AZURE_BASE_URL).toBe('');
+      expect(configService.AZURE_PAT).toBe('');
+      expect(configService.MANUAL_RELEASE_DIRECTORY).toBe('');
+      expect(configService.AUTOMATED_RELEASE_DIRECTORY).toBe('');
+      expect(configService.NODE_ENV).toBe('development');
     });
 
     it('should use environment variable values when set', async () => {
-      // Set up environment variables
-      process.env.PORT = '4000';
-      process.env.AZURE_BASE_URL = 'https://dev.azure.com/myorg';
-      process.env.AZURE_PAT = 'test-pat';
-      process.env.MANUAL_RELEASE_DIRECTORY = 'test-folder';
+      const configService = ConfigService.fromEnvironment({
+        PORT: '4000',
+        AZURE_BASE_URL: 'https://dev.azure.com/myorg',
+        AZURE_PAT: 'test-pat',
+        MANUAL_RELEASE_DIRECTORY: 'manual-folder',
+        AUTOMATED_RELEASE_DIRECTORY: 'automated-folder',
+        NODE_ENV: 'production',
+      });
       
-      // Import the module fresh with the current environment variables
-      const configService = (await import('../configService.js')).default;
-      
-      expect(configService.port).toBe(4000);
-      expect(configService.azureBaseUrl).toBe('https://dev.azure.com/myorg');
-      expect(configService.azurePat).toBe('test-pat');
-      expect(configService.manualReleaseDirectory).toBe('test-folder');
+      expect(configService.PORT).toBe(4000);
+      expect(configService.AZURE_BASE_URL).toBe('https://dev.azure.com/myorg');
+      expect(configService.AZURE_PAT).toBe('test-pat');
+      expect(configService.MANUAL_RELEASE_DIRECTORY).toBe('manual-folder');
+      expect(configService.AUTOMATED_RELEASE_DIRECTORY).toBe('automated-folder');
+      expect(configService.NODE_ENV).toBe('production');
     });
+
+    it('should use development as NODE_ENV when an invalid environment is used', async () => {
+      const configService = ConfigService.fromEnvironment({
+        NODE_ENV: 'blah',
+      });
+
+      expect(configService.NODE_ENV).toBe('development');
+    })
   });
 
   describe('validate', () => {
     it('should throw an error when azureBaseUrl is missing', async () => {
-      // Set up environment with missing azureBaseUrl
-      delete process.env.AZURE_BASE_URL;
-      process.env.AZURE_PAT = 'test-pat';
-      
       // Import the module fresh with the current environment variables
-      const configService = (await import('../configService.js')).default;
+      const configService = ConfigService.fromEnvironment({
+        PORT: '4000',
+        AZURE_PAT: 'test-pat',
+        MANUAL_RELEASE_DIRECTORY: 'manual-folder',
+        AUTOMATED_RELEASE_DIRECTORY: 'automated-folder',
+      });
       
       expect(() => configService.validate()).toThrow();
-      expect(() => configService.validate()).toThrow(/Missing required environment variables: azureBaseUrl/);
+      expect(() => configService.validate()).toThrow(/Missing required environment variables: AZURE_BASE_URL/);
     });
 
-    it('should throw an error when azurePat is missing', async () => {
-      // Set up environment with missing azurePat
-      process.env.AZURE_BASE_URL = 'https://dev.azure.com/myorg';
-      delete process.env.AZURE_PAT;
-      
+    it('should throw an error when both azureBaseUrl and azurePat are missing', async () => {      
       // Import the module fresh with the current environment variables
-      const configService = (await import('../configService.js')).default;
+      const configService = ConfigService.fromEnvironment({
+        PORT: '4000',
+        MANUAL_RELEASE_DIRECTORY: 'manual-folder',
+        AUTOMATED_RELEASE_DIRECTORY: 'automated-folder',
+      });
       
       expect(() => configService.validate()).toThrow();
-      expect(() => configService.validate()).toThrow(/Missing required environment variables: azurePat/);
-    });
-
-    it('should throw an error when both azureBaseUrl and azurePat are missing', async () => {
-      // Clear both required variables
-      delete process.env.AZURE_BASE_URL;
-      delete process.env.AZURE_PAT;
-      
-      // Import the module fresh with the current environment variables
-      const configService = (await import('../configService.js')).default;
-      
-      expect(() => configService.validate()).toThrow();
-      expect(() => configService.validate()).toThrow(/Missing required environment variables: azureBaseUrl, azurePat/);
+      expect(() => configService.validate()).toThrow(/Missing required environment variables: AZURE_BASE_URL, AZURE_PAT/);
     });
 
     it('should not throw an error when all required environment variables are set', async () => {
       // Set up environment with all required variables
-      process.env.AZURE_BASE_URL = 'https://dev.azure.com/myorg';
-      process.env.AZURE_PAT = 'test-pat';
-      process.env.MANUAL_RELEASE_DIRECTORY = 'manual-dir';
-      process.env.AUTOMATED_RELEASE_DIRECTORY = 'automated-dir';
-      
-      // Import the module fresh with the current environment variables
-      const configService = (await import('../configService.js')).default;
+      const configService = ConfigService.fromEnvironment({
+        AZURE_BASE_URL: 'https://dev.azure.com/myorg',
+        AZURE_PAT: 'test-pat',
+        MANUAL_RELEASE_DIRECTORY: 'manual-folder',
+        AUTOMATED_RELEASE_DIRECTORY: 'automated-folder',
+      });
       
       expect(() => configService.validate()).not.toThrow();
     });

@@ -13,11 +13,7 @@ import { ExternalAPIError } from '../utils/errors.js';
 const AZURE_API_VERSION = 'api-version=7.1';
 
 export class AzureDevOpsClient {
-  public baseUrl: string | undefined;
-
-  constructor(baseUrl?: string) {
-    this.baseUrl = baseUrl || config.azureBaseUrl;
-  }
+  public baseUrl = config.AZURE_BASE_URL;
 
   //TODO: Move this to a base class when implementing JiraClient
   async #fetchApi(method: HttpMethod, url: string) {
@@ -26,7 +22,7 @@ export class AzureDevOpsClient {
     const options: FetchOptions = {
       method,
       headers: {
-        Authorization: `Basic ${config.azurePat}`,
+        Authorization: `Basic ${config.AZURE_PAT}`,
         'Content-Type': 'application/json',
       },
     };
