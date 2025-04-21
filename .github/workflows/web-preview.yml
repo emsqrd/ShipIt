@@ -93,6 +93,5 @@ jobs:
           app_location: './frontend'
           api_location: ''
           output_location: 'dist'
-          github_id_token: ${{ steps.idtoken.outputs.result }}
         env:
           VITE_SHIP_IT_API_URL: https://shipit-api.azurewebsites.net/api
