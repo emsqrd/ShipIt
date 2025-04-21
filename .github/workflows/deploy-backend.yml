@@ -8,6 +8,9 @@ on:
     branches:
       - master
   pull_request:
+    types:
+      - ready_for_review
+      - synchronize
     branches:
       - master
   workflow_dispatch:
