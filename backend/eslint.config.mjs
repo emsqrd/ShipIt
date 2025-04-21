@@ -25,7 +25,7 @@ export default [
         },
       ],
       'no-undef': 'error',
-      'no-console': ['warn', { allow: ['error', 'info', 'warn'] }],
+      'no-console': ['error', { allow: ['error', 'info', 'warn'] }],
       'no-restricted-syntax': [
         'error',
         {

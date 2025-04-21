@@ -26,8 +26,6 @@ class ConfigService implements Environment {
   private readonly _NODE_ENV: NodeEnv;
 
   constructor(env = process.env) {
-    console.log('Getting configs');
-
     const nodeEnv = env.NODE_ENV || 'development';
     const validatedNodeEnv = ['development', 'production'].includes(nodeEnv)
       ? nodeEnv
