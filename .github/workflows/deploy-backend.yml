@@ -5,21 +5,20 @@ name: ShipIt Api CI/CD
 
 on:
   push:
-    branches:
-      - master
+    branches: [master]
+    paths:
+      - 'backend/**'
   pull_request:
-    types:
-      - ready_for_review
-      - synchronize
-    branches:
-      - master
+    branches: [master]
+    paths:
+      - 'backend/**'
+    types: [ready_for_review, synchronize]
   workflow_dispatch:
 
 jobs:
   build:
     name: Build Job
 
-    if: github.event_name == 'pull_request' && github.event.pull_request.draft == false && (github.event.action == 'ready_for_review' || github.event.action == 'synchronize')
     runs-on: ubuntu-latest
 
     permissions:
@@ -67,11 +66,10 @@ jobs:
           path: backend
 
   deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     name: Deploy Job
     needs: build
     runs-on: ubuntu-latest
-
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
 
     environment:
       name: 'Production'

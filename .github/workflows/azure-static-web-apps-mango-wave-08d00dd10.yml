@@ -19,7 +19,6 @@ jobs:
   build:
     name: Build Job
 
-    if: github.event_name == 'pull_request' && github.event.pull_request.draft == false && (github.event.action == 'ready_for_review' || github.event.action == 'synchronize')
     runs-on: ubuntu-latest
 
     permissions:
@@ -61,8 +60,9 @@ jobs:
     name: Deploy Job
     needs: build
     runs-on: ubuntu-latest
-
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    permissions:
+      id-token: write
+      contents: read
 
     steps:
       - name: Install OIDC Client from Core Package
