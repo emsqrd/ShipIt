@@ -8,13 +8,20 @@ on:
     branches:
       - master
   pull_request:
+    types:
+      - ready_for_review
+      - synchronize
     branches:
       - master
   workflow_dispatch:
 
 jobs:
   build:
+    name: Build Job
+
+    if: github.event_name == 'pull_request' && github.event.pull_request.draft == false && (github.event.action == 'ready_for_review' || github.event.action == 'synchronize')
     runs-on: ubuntu-latest
+
     permissions:
       contents: read #This is required for actions/checkout
 
@@ -22,7 +29,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Set up Node.js version
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '20.17.0'
 
@@ -58,14 +65,18 @@ jobs:
         with:
           name: backend-build
           path: backend
+
   deploy:
-    runs-on: ubuntu-latest
+    name: Deploy Job
     needs: build
-    # Only run deploy job on pushes to master, not on PRs
+    runs-on: ubuntu-latest
+
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+
     environment:
       name: 'Production'
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+
     permissions:
       id-token: write #This is required for requesting the JWT
       contents: read #This is required for actions/checkout

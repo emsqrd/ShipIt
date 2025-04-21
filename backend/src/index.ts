@@ -1,7 +1,6 @@
-import app from './app.js';
-import config from './services/configService.js';
+import app, { config } from './app.js';
 
-const PORT = config.port;
+const PORT = config.PORT;
 
 // Start server
 const server = app.listen(PORT, () => {

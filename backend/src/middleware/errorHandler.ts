@@ -1,6 +1,6 @@
 import { NextFunction, Request, RequestHandler, Response } from 'express';
 
-import { env } from '../config/env.js';
+import { config } from '../app.js';
 import { ErrorCode } from '../enums/errorCode.js';
 import { HttpStatusCode } from '../enums/httpStatusCode.js';
 import { AppError } from '../utils/errors.js';
@@ -34,18 +34,20 @@ export const errorHandler = (
       status: 'error',
       message: err.message,
       code: err.code,
-      ...(env.NODE_ENV === 'development' && { stack: err.stack }),
+      ...(config.NODE_ENV === 'development' && { stack: err.stack }),
     });
   }
 
   // Default error (uncaught exceptions)
   const statusCode = err.statusCode || HttpStatusCode.INTERNAL_SERVER_ERROR;
   const message =
-    env.NODE_ENV === 'production' ? 'Internal server error' : err.message || 'Something went wrong';
+    config.NODE_ENV === 'production'
+      ? 'Internal server error'
+      : err.message || 'Something went wrong';
   return res.status(statusCode).json({
     status: 'error',
     message,
-    ...(env.NODE_ENV === 'development' && { stack: err.stack }),
+    ...(config.NODE_ENV === 'development' && { stack: err.stack }),
   });
 };
 

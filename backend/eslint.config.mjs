@@ -11,12 +11,21 @@ export default [
       sourceType: 'module',
       globals: {
         ...globals.node,
+        NodeJS: 'readonly', // Add NodeJS namespace as a global
       },
     },
     rules: {
-      'no-unused-vars': 'warn',
+      'no-unused-vars': 'off', // Turned off in favor of @typescript-eslint/no-unused-vars
+      '@typescript-eslint/no-unused-vars': [
+        'warn',
+        {
+          argsIgnorePattern: '^_',
+          destructuredArrayIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+        },
+      ],
       'no-undef': 'error',
-      'no-console': ['warn', { allow: ['error', 'info', 'warn'] }],
+      'no-console': ['error', { allow: ['error', 'info', 'warn'] }],
       'no-restricted-syntax': [
         'error',
         {

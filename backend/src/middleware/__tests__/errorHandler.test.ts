@@ -1,6 +1,15 @@
+const mockConfig = {
+  NODE_ENV: 'development',
+}
+
+// Mock the configService module to return our configurable mockConfig object
+jest.mock('../../app.js', () => ({
+  __esModule: true,
+  config: mockConfig
+}));
+
 import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { NextFunction, Request, RequestHandler, Response } from 'express';
-import { env } from '../../config/env';
 import { ErrorCode } from '../../enums/errorCode';
 import { HttpStatusCode } from '../../enums/httpStatusCode';
 import { AppError } from '../../utils/errors';
@@ -17,12 +26,6 @@ class CustomError extends Error {
   }
 }
 
-// Mock environment variables
-jest.mock('../../config/env.js', () => ({
-  env: {
-    NODE_ENV: 'development', // Use development environment by default for tests
-  },
-}));
 
 describe('Error Handler Middleware', () => {
   // Mock Express request, response, and next function
@@ -45,7 +48,7 @@ describe('Error Handler Middleware', () => {
   afterEach(() => {
     jest.clearAllMocks();
     consoleErrorSpy.mockRestore();
-    env.NODE_ENV = 'development'; // Reset to development after each test
+    mockConfig.NODE_ENV = 'development'; // Reset to development after each test
   });
 
   describe('errorHandler function', () => {
@@ -129,7 +132,7 @@ describe('Error Handler Middleware', () => {
 
     it('should hide error details in production environment', () => {
       // Arrange
-      env.NODE_ENV = 'production';
+      mockConfig.NODE_ENV = 'production';
       const error = new Error('Sensitive error details');
 
       // Act
@@ -150,7 +153,7 @@ describe('Error Handler Middleware', () => {
 
     it('should set default error message in development environment if not provided', () => {
       // Arrange
-      env.NODE_ENV = 'development';
+      mockConfig.NODE_ENV = 'development';
       const error = new Error();
 
       // Act

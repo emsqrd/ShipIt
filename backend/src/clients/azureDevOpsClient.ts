@@ -1,7 +1,7 @@
+import { config } from '../app.js';
 import { ErrorCode } from '../enums/errorCode.js';
 import { HttpMethod } from '../enums/httpMethod.js';
 import { HttpStatusCode } from '../enums/httpStatusCode.js';
-import config from '../services/configService.js';
 import {
   BuildTimelineResponse,
   PipelineResponse,
@@ -13,26 +13,25 @@ import { ExternalAPIError } from '../utils/errors.js';
 const AZURE_API_VERSION = 'api-version=7.1';
 
 export class AzureDevOpsClient {
-  public baseUrl: string | undefined;
-
-  constructor(baseUrl?: string) {
-    this.baseUrl = baseUrl || config.azureBaseUrl;
+  private get baseUrl() {
+    return config.AZURE_BASE_URL;
   }
 
   //TODO: Move this to a base class when implementing JiraClient
   async #fetchApi(method: HttpMethod, url: string) {
     type FetchOptions = Parameters<typeof fetch>[1];
 
+    const fullUrl = `${this.baseUrl}${url}`;
     const options: FetchOptions = {
       method,
       headers: {
-        Authorization: `Basic ${config.azurePat}`,
+        Authorization: `Basic ${config.AZURE_PAT}`,
         'Content-Type': 'application/json',
       },
     };
 
     try {
-      const response = await fetch(url, options);
+      const response = await fetch(fullUrl, options);
 
       if (!response.ok) {
         const errorText = await response.text().catch(() => 'No error details available');
@@ -63,19 +62,19 @@ export class AzureDevOpsClient {
 
   // API URL methods
   #getPipelinesUrl() {
-    return `${this.baseUrl}/pipelines?${AZURE_API_VERSION}`;
+    return `/pipelines?${AZURE_API_VERSION}`;
   }
 
   #getPipelineRunsUrl(pipelineId: number) {
-    return `${this.baseUrl}/pipelines/${pipelineId}/runs?${AZURE_API_VERSION}`;
+    return `/pipelines/${pipelineId}/runs?${AZURE_API_VERSION}`;
   }
 
   #getPipelineRunDetailsUrl(pipelineId: number, runId: number) {
-    return `${this.baseUrl}/pipelines/${pipelineId}/runs/${runId}?${AZURE_API_VERSION}`;
+    return `/pipelines/${pipelineId}/runs/${runId}?${AZURE_API_VERSION}`;
   }
 
   #getBuildTimelineUrl(buildId: number) {
-    return `${this.baseUrl}/build/builds/${buildId}/timeline?${AZURE_API_VERSION}`;
+    return `/build/builds/${buildId}/timeline?${AZURE_API_VERSION}`;
   }
 
   // API Calling methods
