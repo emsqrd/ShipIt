@@ -6,6 +6,7 @@ on:
     paths:
       - 'frontend/**'
     types: [ready_for_review, synchronize]
+  workflow_dispatch:
 
 jobs:
   build:
