@@ -3,9 +3,9 @@ const mockConfig = {
 }
 
 // Mock the configService module to return our configurable mockConfig object
-jest.mock('../../services/configService.js', () => ({
+jest.mock('../../app.js', () => ({
   __esModule: true,
-  default: mockConfig
+  config: mockConfig
 }));
 
 import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';

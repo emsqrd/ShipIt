@@ -35,9 +35,9 @@ const mockConfig = {
 };
 
 // Mock the configService module to return our configurable mockConfig object
-jest.mock('../configService.js', () => ({
+jest.mock('../../app.js', () => ({
   __esModule: true,
-  default: mockConfig
+  config: mockConfig
 }));
 
 // Mock the AzureDevOpsClient first, before any imports that might use it

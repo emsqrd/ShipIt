@@ -1,8 +1,8 @@
 import { NextFunction, Request, RequestHandler, Response } from 'express';
 
+import { config } from '../app.js';
 import { ErrorCode } from '../enums/errorCode.js';
 import { HttpStatusCode } from '../enums/httpStatusCode.js';
-import config from '../services/configService.js';
 import { AppError } from '../utils/errors.js';
 
 interface ExtendedError extends Error {

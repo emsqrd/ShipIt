@@ -11,7 +11,7 @@ export interface Environment {
   PORT: number;
   AZURE_BASE_URL: string;
   AZURE_PAT: string;
-  MANUAL_RELEASE_DIRECTORY: string; // Also accessed as buildDefinitionFolder
+  MANUAL_RELEASE_DIRECTORY: string;
   AUTOMATED_RELEASE_DIRECTORY: string;
   NODE_ENV: NodeEnv;
 }
@@ -26,11 +26,15 @@ class ConfigService implements Environment {
   private readonly _NODE_ENV: NodeEnv;
 
   constructor(env = process.env) {
+    console.log('Getting configs');
+
     const nodeEnv = env.NODE_ENV || 'development';
-    if (!['development', 'production'].includes(nodeEnv)) {
-      console.warn(`Invalid NODE_ENV: ${nodeEnv} defaulting to 'development'`);
-      env.NODE_ENV = 'development';
-    }
+    const validatedNodeEnv = ['development', 'production'].includes(nodeEnv)
+      ? nodeEnv
+      : (() => {
+          console.warn(`Invalid NODE_ENV: '${nodeEnv}' defaulting to 'development'`);
+          return 'development';
+        })();
 
     // Set all properties
     this._PORT = parseInt(env.PORT || '3000', 10);
@@ -38,7 +42,7 @@ class ConfigService implements Environment {
     this._AZURE_PAT = env.AZURE_PAT || '';
     this._MANUAL_RELEASE_DIRECTORY = env.MANUAL_RELEASE_DIRECTORY || '';
     this._AUTOMATED_RELEASE_DIRECTORY = env.AUTOMATED_RELEASE_DIRECTORY || '';
-    this._NODE_ENV = env.NODE_ENV as NodeEnv;
+    this._NODE_ENV = validatedNodeEnv as NodeEnv;
   }
 
   get PORT() {
@@ -89,8 +93,3 @@ class ConfigService implements Environment {
 }
 
 export { ConfigService };
-// Export a singleton instance
-const config = new ConfigService();
-
-// Default export the config service for compatibility with existing imports
-export default config;

@@ -1,3 +1,4 @@
+import { config } from '../app.js';
 import azureDevOpsClient from '../clients/azureDevOpsClient.js';
 import { ENVIRONMENT } from '../enums/environment.js';
 import { ErrorCode } from '../enums/errorCode.js';
@@ -16,7 +17,6 @@ import {
   getErrorMessage,
   getErrorStatusCode,
 } from '../utils/errors.js';
-import configService from './configService.js';
 
 // Cache configuration
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
@@ -123,10 +123,7 @@ async function getReleasePipelines(): Promise<Pipeline[]> {
   }
 
   // Define the release directories we want to filter by
-  const releaseDirectories = [
-    configService.MANUAL_RELEASE_DIRECTORY,
-    configService.AUTOMATED_RELEASE_DIRECTORY,
-  ];
+  const releaseDirectories = [config.MANUAL_RELEASE_DIRECTORY, config.AUTOMATED_RELEASE_DIRECTORY];
 
   // Filter pipelines that have folders matching our release directories
   const releasePipelines = filterReleasePipelines(pipelines, releaseDirectories);
@@ -187,9 +184,9 @@ async function getMostRecentReleasePipelineRunByEnvironment(
   );
 
   // Get the most recent run for the environment
-  if (pipeline.folder === configService.MANUAL_RELEASE_DIRECTORY) {
+  if (pipeline.folder === config.MANUAL_RELEASE_DIRECTORY) {
     mostRecentPipelineRun = sortedRuns.find((run) => run.templateParameters?.env === environment);
-  } else if (pipeline.folder === configService.AUTOMATED_RELEASE_DIRECTORY) {
+  } else if (pipeline.folder === config.AUTOMATED_RELEASE_DIRECTORY) {
     mostRecentPipelineRun = await findSuccessfulPipelineRunByStage(sortedRuns, environment);
   }
 
