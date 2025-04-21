@@ -66,6 +66,7 @@ jobs:
           path: backend
 
   deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     name: Deploy Job
     needs: build
     runs-on: ubuntu-latest
