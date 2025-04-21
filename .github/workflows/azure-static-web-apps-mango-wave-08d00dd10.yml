@@ -1,6 +1,3 @@
-# For more information regarding Static Web App workflow configurations, please visit: https://aka.ms/swaworkflowconfig
-# More GitHub Actions for Azure: https://github.com/Azure/actions
-
 name: ShipIt Web CI/CD
 
 on:
@@ -8,33 +5,28 @@ on:
     branches:
       - master
   pull_request:
-    types:
-      - ready_for_review
-      - synchronize
+    types: [opened, synchronize, reopened, closed]
     branches:
       - master
-  workflow_dispatch:
 
 jobs:
-  build:
-    name: Build Job
-
+  build_and_deploy_job:
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
     runs-on: ubuntu-latest
-
+    name: Build and Deploy Job
     permissions:
       id-token: write
       contents: read
-
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v3
         with:
           submodules: true
           lfs: false
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v3
         with:
-          node-version: '20.17.0'
+          node-version: '20'
 
       - name: Install root dependencies
         run: npm install --ignore-scripts
@@ -56,15 +48,6 @@ jobs:
           name: frontend-test-coverage
           path: frontend/coverage
 
-  deploy:
-    name: Deploy Job
-    needs: build
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
-
-    steps:
       - name: Install OIDC Client from Core Package
         run: npm install @actions/core@1.6.0 @actions/http-client
 
@@ -83,10 +66,13 @@ jobs:
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_MANGO_WAVE_08D00DD10 }}
           action: 'upload'
-          app_location: './frontend'
-          api_location: ''
-          output_location: 'dist'
+          ###### Repository/Build Configurations - These values can be configured to match your app requirements. ######
+          # For more information regarding Static Web App workflow configurations, please visit: https://aka.ms/swaworkflowconfig
+          app_location: './frontend' # App source code path
+          api_location: '' # Api source code path - optional
+          output_location: 'dist' # Built app content directory - optional
           github_id_token: ${{ steps.idtoken.outputs.result }}
+          ###### End of Repository/Build Configurations ######
         env:
           VITE_SHIP_IT_API_URL: https://shipit-api.azurewebsites.net/api
 
@@ -101,4 +87,4 @@ jobs:
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_MANGO_WAVE_08D00DD10 }}
           action: 'close'
-          app_location: './frontend'
+          app_location: './frontend' # App source code path
