@@ -26,8 +26,14 @@ describe('ConfigService', () => {
   });
 
   describe('initialization', () => {
+    it('should use process.env when no override is passed', () => {
+      process.env.PORT = '1234';
+      const svc = new ConfigService();
+      expect(svc.PORT).toBe(1234);
+    });
+
     it('should use default values when environment variables are not set', async () => {
-      const configService = ConfigService.fromEnvironment({});
+      const configService = ConfigService.fromEnvironment({ NODE_ENV: undefined});
       
       // Verify all properties have their expected default values
       expect(configService.PORT).toBe(3000);
@@ -62,7 +68,13 @@ describe('ConfigService', () => {
       });
 
       expect(configService.NODE_ENV).toBe('development');
-    })
+    });
+
+    it('should respect process.env when no override is passed to fromEnvironment', () => {
+      process.env.PORT = '4321';
+      const svc = ConfigService.fromEnvironment();
+      expect(svc.PORT).toBe(4321);
+    });
   });
 
   describe('validate', () => {
