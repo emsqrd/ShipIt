@@ -6,11 +6,13 @@ name: ShipIt Api CI/CD
 on:
   push:
     branches: [master]
+    paths:
+      - 'backend/**'
   pull_request:
+    branches: [master]
     paths:
       - 'backend/**'
     types: [ready_for_review, synchronize]
-    branches: [master]
   workflow_dispatch:
 
 jobs:
