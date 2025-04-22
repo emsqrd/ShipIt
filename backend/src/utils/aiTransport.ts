@@ -20,7 +20,11 @@ export class ApplicationInsightsTransport extends Transport {
     appInsightsClient?.trackTrace({
       message: info.message,
       severity: severityMap[info.level] ?? 1,
-      properties: info.meta || {},
+      properties: {
+        service: info.service,
+        env: info.env,
+        ...(info.meta || {}),
+      },
     });
 
     callback();

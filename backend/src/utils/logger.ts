@@ -12,7 +12,7 @@ export const logger = createLogger({
     format.splat(),
     format.json(),
   ),
-  defaultMeta: { service: 'shipit.api' },
+  defaultMeta: { service: 'shipit.api', env: process.env.NODE_ENV },
   transports: [
     new transports.Console({
       format: format.combine(format.colorize(), format.simple()),

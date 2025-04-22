@@ -40,9 +40,9 @@ describe('logger', () => {
     expect(logger.transports.some(t => t instanceof ApplicationInsightsTransport)).toBe(true);
   });
 
-  it('should set defaultMeta.service to shipit.api', async () => {
+  it('should set custom properties for logging', async () => {
     process.env.NODE_ENV = 'development';
     const { logger } = await import('../logger');
-    expect(logger.defaultMeta).toEqual({ service: 'shipit.api' });
+    expect(logger.defaultMeta).toEqual({ service: 'shipit.api', env: process.env.NODE_ENV});
   });
 });
