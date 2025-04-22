@@ -3,7 +3,9 @@ import { NextFunction, Request, RequestHandler, Response } from 'express';
 import { config } from '../app.js';
 import { ErrorCode } from '../enums/errorCode.js';
 import { HttpStatusCode } from '../enums/httpStatusCode.js';
+import { appInsightsClient } from '../utils/appInsights.js';
 import { AppError } from '../utils/errors.js';
+import { logger } from '../utils/logger.js';
 
 interface ExtendedError extends Error {
   statusCode?: HttpStatusCode | number | undefined;
@@ -21,7 +23,9 @@ export const errorHandler = (
   next: NextFunction,
 ) => {
   // Log error for debugging
-  console.error('Error:', err);
+  logger.error('Error:', err);
+
+  appInsightsClient.trackException({ exception: err });
 
   // If headers already sent, let Express default error handler deal with it
   if (res.headersSent) {

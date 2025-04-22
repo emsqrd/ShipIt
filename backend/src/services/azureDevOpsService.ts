@@ -17,6 +17,7 @@ import {
   getErrorMessage,
   getErrorStatusCode,
 } from '../utils/errors.js';
+import { logger } from '../utils/logger.js';
 
 // Cache configuration
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
@@ -63,7 +64,11 @@ export function clearCache(keyPattern: string | null = null) {
 async function getPipelines(): Promise<Pipeline[]> {
   const cacheKey = 'pipelines';
   const cachedPipelines = getCachedData<Pipeline[]>(cacheKey);
-  if (cachedPipelines) return cachedPipelines;
+  if (cachedPipelines) {
+    logger.debug(`Cache hit for key '${cacheKey}', returning ${cachedPipelines.length} pipelines`);
+    return cachedPipelines;
+  }
+  logger.info(`Cache miss for key '${cacheKey}', fetching pipelines from Azure DevOps`);
 
   try {
     const response = await azureDevOpsClient.getPipelines();
@@ -73,10 +78,11 @@ async function getPipelines(): Promise<Pipeline[]> {
       name: response.name,
       folder: response.folder,
     }));
+    logger.debug(`Fetched ${result.length} pipelines from Azure DevOps`);
 
     return setCachedData<Pipeline[]>(cacheKey, result);
   } catch (error) {
-    console.error('Error fetching pipelines:', error);
+    logger.error('Error fetching pipelines:', error);
     throw new ExternalAPIError(
       `Failed to fetch release pipelines: ${getErrorMessage(error)}`,
       getErrorStatusCode(error) || HttpStatusCode.SERVICE_UNAVAILABLE,
@@ -101,7 +107,7 @@ async function getBuildTimelineRecords(buildId: number): Promise<BuildTimelineRe
 
     return results.filter((result) => result.parentId === null);
   } catch (error) {
-    console.error('Error fetching build timeline:', error);
+    logger.error('Error fetching build timeline:', error);
     throw new ExternalAPIError(
       `Failed to fetch build pipeline: ${getErrorMessage(error)}`,
       getErrorStatusCode(error) || HttpStatusCode.SERVICE_UNAVAILABLE,
@@ -116,16 +122,17 @@ function filterReleasePipelines(pipelines: Pipeline[], releaseDirectories: strin
 }
 
 async function getReleasePipelines(): Promise<Pipeline[]> {
+  logger.info('Retrieving release pipelines');
   const pipelines = await getPipelines();
+  logger.debug(`Total pipelines available: ${pipelines.length}`);
 
   if (!pipelines?.length) {
     throw new NotFoundError('No pipelines found');
   }
 
-  // Define the release directories we want to filter by
   const releaseDirectories = [config.MANUAL_RELEASE_DIRECTORY, config.AUTOMATED_RELEASE_DIRECTORY];
+  logger.info(`Filtering pipelines for release directories: ${releaseDirectories.join(', ')}`);
 
-  // Filter pipelines that have folders matching our release directories
   const releasePipelines = filterReleasePipelines(pipelines, releaseDirectories);
 
   if (releasePipelines.length === 0) {
@@ -248,9 +255,11 @@ function getMostRecentRunPerRepo(pipelineRuns: PipelineRun[]): PipelineRun[] {
 
 // Get all released versions for a specific environment
 export async function getReleasedVersions(environment: ENVIRONMENT): Promise<ReleasedVersion[]> {
+  logger.info(`Fetching released versions for environment: ${environment}`);
   try {
     // Get all release pipelines
     const releasePipelines = await getReleasePipelines();
+    logger.debug(`Found ${releasePipelines.length} release pipelines to process`);
 
     const validPipelineRunPromises = releasePipelines.map(async (pipeline) => {
       return await getMostRecentReleasePipelineRunByEnvironment(pipeline, environment);
@@ -264,6 +273,7 @@ export async function getReleasedVersions(environment: ENVIRONMENT): Promise<Rel
     );
 
     const latestRuns = getMostRecentRunPerRepo(filteredPipelineRuns);
+    logger.debug(`After deduplication, ${latestRuns.length} latest runs per repo returned`);
 
     // Map the results into the final format
     const releasedVersions: ReleasedVersion[] = latestRuns.map((pipelineRun) => ({
@@ -283,7 +293,7 @@ export async function getReleasedVersions(environment: ENVIRONMENT): Promise<Rel
     }
 
     // Otherwise, wrap in a general error
-    console.error('Error fetching released versions:', error);
+    logger.error('Error fetching released versions:', error);
     throw new ExternalAPIError(
       `Failed to fetch released versions for environment ${environment}: ${getErrorMessage(error)}`,
       HttpStatusCode.SERVICE_UNAVAILABLE,

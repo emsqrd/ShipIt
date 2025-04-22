@@ -9,7 +9,7 @@ on:
     paths:
       - 'backend/**'
   pull_request:
-    types: [ready_for_review, synchronize]
+    types: [opened, closed, ready_for_review, synchronize]
     branches:
       - master
     paths:

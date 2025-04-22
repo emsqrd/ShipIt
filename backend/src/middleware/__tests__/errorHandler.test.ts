@@ -8,12 +8,20 @@ jest.mock('../../app.js', () => ({
   config: mockConfig
 }));
 
+// Mock the appInsightsClient module to prevent real telemetry calls
+jest.mock('../../utils/appInsights', () => ({
+  __esModule: true,
+  appInsightsClient: { trackException: jest.fn() }
+}));
+
 import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { NextFunction, Request, RequestHandler, Response } from 'express';
 import { ErrorCode } from '../../enums/errorCode';
 import { HttpStatusCode } from '../../enums/httpStatusCode';
 import { AppError } from '../../utils/errors';
 import { catchAsync, errorHandler } from '../errorHandler';
+// Add import for logger
+import { logger } from '../../utils/logger';
 
 // Custom error class for testing
 class CustomError extends Error {
@@ -32,7 +40,7 @@ describe('Error Handler Middleware', () => {
   let mockReq: Partial<Request>;
   let mockRes: Partial<Response>;
   let mockNext: NextFunction;
-  let consoleErrorSpy: ReturnType<typeof jest.spyOn>;
+  let loggerErrorSpy: ReturnType<typeof jest.spyOn>;
 
   beforeEach(() => {
     mockReq = {} as Partial<Request>;
@@ -42,12 +50,12 @@ describe('Error Handler Middleware', () => {
       headersSent: false,
     } as Partial<Response>;
     mockNext = jest.fn();
-    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    loggerErrorSpy = jest.spyOn(logger, 'error').mockReturnValue(logger);
   });
 
   afterEach(() => {
     jest.clearAllMocks();
-    consoleErrorSpy.mockRestore();
+    loggerErrorSpy.mockRestore();
     mockConfig.NODE_ENV = 'development'; // Reset to development after each test
   });
 
@@ -110,7 +118,7 @@ describe('Error Handler Middleware', () => {
 
     it('should handle error with statusCode property', () => {
       // Arrange
-      const error = new CustomError('Error with status code', HttpStatusCode.NOT_FOUND);
+      const error = new CustomError('Error with custom status code', HttpStatusCode.NOT_FOUND);
 
       // Act
       errorHandler(error, mockReq as Request, mockRes as Response, mockNext);
@@ -127,7 +135,7 @@ describe('Error Handler Middleware', () => {
       errorHandler(error, mockReq as Request, mockRes as Response, mockNext);
 
       // Assert
-      expect(consoleErrorSpy).toHaveBeenCalledWith('Error:', error);
+      expect(loggerErrorSpy).toHaveBeenCalledWith('Error:', error);
     });
 
     it('should hide error details in production environment', () => {

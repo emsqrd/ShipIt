@@ -53,8 +53,20 @@ jest.mock('../../clients/azureDevOpsClient.js', () => {
   };
 });
 
+jest.mock('../../utils/logger');
+
+// Mock the appInsightsClient module to prevent real telemetry calls
+jest.mock('../../utils/appInsights', () => ({
+  __esModule: true,
+  appInsightsClient: { 
+    trackException: jest.fn(),
+    trackTrace: jest.fn(),
+  }
+}));
+
 // Import modules after mocking
 import AzureDevOpsClient from '../../clients/azureDevOpsClient';
+import { logger } from '../../utils/logger';
 import { __test__, clearCache, getReleasedVersions } from '../azureDevOpsService';
 
 /**
@@ -204,14 +216,13 @@ const mockReleasedVersionsFixtures = {
   pipeline4Run3Repo1: createMockReleasedVersion('repo1', 1, 'Pipeline1', 3, 'PipelineRun3'),
 }
 
-// Mock console.error to prevent test output pollution
-const originalConsoleError = console.error;
-console.error = jest.fn() as jest.Mock;
+let loggerErrorSpy: ReturnType<typeof jest.spyOn>;
 
 describe('azureDevOpsService', () => {
   beforeEach(() => {
     jest.resetAllMocks();
-    (console.error as jest.Mock).mockClear();
+
+    loggerErrorSpy = jest.spyOn(logger, 'error').mockReturnValue(logger);
     clearCache();
 
     // Reset config mock to default values
@@ -220,8 +231,7 @@ describe('azureDevOpsService', () => {
   });
 
   afterAll(() => {
-    // Restore console.error
-    console.error = originalConsoleError;
+    loggerErrorSpy.mockRestore();
   });
 
   describe('internal functionality', () => {
@@ -692,7 +702,7 @@ describe('azureDevOpsService', () => {
       // Act & Assert
       await expect(getReleasedVersions(ENVIRONMENT.DEV)).rejects.toThrow(ExternalAPIError);
       await expect(getReleasedVersions(ENVIRONMENT.DEV)).rejects.toThrow(/Failed to fetch released versions for environment/);
-      expect(console.error).toHaveBeenCalled();
+      expect(loggerErrorSpy).toHaveBeenCalled();
     });
   });
 
