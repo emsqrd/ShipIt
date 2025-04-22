@@ -12,7 +12,7 @@ on:
     branches: [master]
     paths:
       - 'backend/**'
-    types: [ready_for_review, synchronize]
+    types: [opened, ready_for_review, synchronize]
   workflow_dispatch:
 
 jobs:
