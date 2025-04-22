@@ -3,12 +3,6 @@ import { logger } from './utils/logger.js';
 
 const PORT = config.PORT;
 
-const originalWarn = console.warn;
-console.warn = (...args) => {
-  if (args[0]?.includes('applicationinsights')) return;
-  originalWarn(...args);
-};
-
 // Start server
 const server = app.listen(PORT, () => {
   logger.info(`Server is running on port ${PORT}`);
