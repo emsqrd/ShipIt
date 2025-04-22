@@ -42,6 +42,10 @@ class ConfigService implements Environment {
     this._MANUAL_RELEASE_DIRECTORY = env.MANUAL_RELEASE_DIRECTORY || '';
     this._AUTOMATED_RELEASE_DIRECTORY = env.AUTOMATED_RELEASE_DIRECTORY || '';
     this._NODE_ENV = validatedNodeEnv as NodeEnv;
+    // Log non-sensitive config values
+    logger.debug(
+      `ConfigService initialized (NODE_ENV=${this._NODE_ENV}, PORT=${this._PORT}, AZURE_BASE_URL=${this._AZURE_BASE_URL}, MANUAL_RELEASE_DIRECTORY=${this._MANUAL_RELEASE_DIRECTORY}, AUTOMATED_RELEASE_DIRECTORY=${this._AUTOMATED_RELEASE_DIRECTORY})`,
+    );
   }
 
   get PORT() {
@@ -72,6 +76,8 @@ class ConfigService implements Environment {
    * @throws Error if any required values are missing
    */
   validate() {
+    // Log start of validation
+    logger.debug('Validating required environment variables...');
     const requiredEnvVars: Array<[string, string]> = [
       ['AZURE_BASE_URL', this.AZURE_BASE_URL],
       ['AZURE_PAT', this.AZURE_PAT],
@@ -80,8 +86,14 @@ class ConfigService implements Environment {
     ];
 
     const missingVars = requiredEnvVars.filter(([_, value]) => !value).map(([name]) => name);
+    // Log successful validation if nothing is missing
+    if (missingVars.length === 0) {
+      logger.info('All required environment variables present.');
+    }
 
     if (missingVars.length > 0) {
+      // Log missing environment variables before throwing
+      logger.error(`Configuration validation failed - missing: ${missingVars.join(', ')}`);
       throw new AppError(
         `Missing required environment variables: ${missingVars.join(', ')}`,
         500,
