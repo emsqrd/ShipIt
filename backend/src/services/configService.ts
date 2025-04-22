@@ -43,7 +43,7 @@ class ConfigService implements Environment {
     this._AUTOMATED_RELEASE_DIRECTORY = env.AUTOMATED_RELEASE_DIRECTORY || '';
     this._NODE_ENV = validatedNodeEnv as NodeEnv;
     // Log non-sensitive config values
-    logger.debug(
+    logger.info(
       `ConfigService initialized (NODE_ENV=${this._NODE_ENV}, PORT=${this._PORT}, AZURE_BASE_URL=${this._AZURE_BASE_URL}, MANUAL_RELEASE_DIRECTORY=${this._MANUAL_RELEASE_DIRECTORY}, AUTOMATED_RELEASE_DIRECTORY=${this._AUTOMATED_RELEASE_DIRECTORY})`,
     );
   }
