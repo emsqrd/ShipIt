@@ -30,5 +30,5 @@ export default {
     '!dist/**',
   ],
   // Exclude paths from test discovery entirely
-  testPathIgnorePatterns: ['/node_modules/', '/dist/'],
+  modulePathIgnorePatterns: ['/node_modules/', '/dist/'],
 };
