@@ -13,6 +13,8 @@ jest.mock('../../utils/appInsights', () => ({
   }
 }));
 
+jest.mock('../../utils/logger');
+
 describe('ConfigService', () => {
   // Reset modules before each test
   beforeEach(() => {

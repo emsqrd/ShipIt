@@ -53,6 +53,8 @@ jest.mock('../../clients/azureDevOpsClient.js', () => {
   };
 });
 
+jest.mock('../../utils/logger');
+
 // Mock the appInsightsClient module to prevent real telemetry calls
 jest.mock('../../utils/appInsights', () => ({
   __esModule: true,
