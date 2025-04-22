@@ -5,6 +5,7 @@ import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 
 import { errorHandler } from './middleware/errorHandler.js';
+import { logRequests } from './middleware/logRequests.js';
 import azureDevOpsRouter from './routes/azureDevOps.js';
 import { ConfigService } from './services/configService.js';
 import { NotFoundError } from './utils/errors.js';
@@ -58,6 +59,8 @@ app.use('*', (req, res, next) => {
 
 // @ts-expect-error - Express error handler types are complex
 app.use(errorHandler);
+
+app.use(logRequests);
 
 export { config };
 export default app;
