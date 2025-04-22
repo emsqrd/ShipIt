@@ -8,6 +8,12 @@ jest.mock('../../app.js', () => ({
   config: mockConfig
 }));
 
+// Mock the appInsightsClient module to prevent real telemetry calls
+jest.mock('../../utils/appInsights', () => ({
+  __esModule: true,
+  appInsightsClient: { trackException: jest.fn() }
+}));
+
 import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { NextFunction, Request, RequestHandler, Response } from 'express';
 import { ErrorCode } from '../../enums/errorCode';

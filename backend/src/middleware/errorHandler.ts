@@ -3,6 +3,7 @@ import { NextFunction, Request, RequestHandler, Response } from 'express';
 import { config } from '../app.js';
 import { ErrorCode } from '../enums/errorCode.js';
 import { HttpStatusCode } from '../enums/httpStatusCode.js';
+import { appInsightsClient } from '../utils/appInsights.js';
 import { AppError } from '../utils/errors.js';
 import { logger } from '../utils/logger.js';
 
@@ -23,6 +24,8 @@ export const errorHandler = (
 ) => {
   // Log error for debugging
   logger.error('Error:', err);
+
+  appInsightsClient.trackException({ exception: err });
 
   // If headers already sent, let Express default error handler deal with it
   if (res.headersSent) {

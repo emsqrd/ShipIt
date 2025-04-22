@@ -4,6 +4,15 @@ import { ConfigService } from '../configService.js';
 // Store original environment variables
 const originalEnv = { ...process.env };
 
+// Mock the appInsightsClient module to prevent real telemetry calls
+jest.mock('../../utils/appInsights', () => ({
+  __esModule: true,
+  appInsightsClient: { 
+    trackException: jest.fn(),
+    trackTrace: jest.fn(),
+  }
+}));
+
 describe('ConfigService', () => {
   // Reset modules before each test
   beforeEach(() => {

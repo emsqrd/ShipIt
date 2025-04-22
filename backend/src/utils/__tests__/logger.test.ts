@@ -1,6 +1,12 @@
 import { afterAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { transports } from 'winston';
 
+// Mock the appInsightsClient module to prevent real telemetry calls
+jest.mock('../../utils/appInsights', () => ({
+  __esModule: true,
+  appInsightsClient: { trackException: jest.fn() }
+}));
+
 describe('logger', () => {
   const ORIGINAL_ENV = process.env;
 
@@ -28,8 +34,10 @@ describe('logger', () => {
   it('should have a single console transport', async () => {
     process.env.NODE_ENV = 'development';
     const { logger } = await import('../logger');
-    expect(logger.transports).toHaveLength(1);
-    expect(logger.transports[0]).toBeInstanceOf(transports.Console);
+    const { ApplicationInsightsTransport } = await import('../aiTransport');
+    expect(logger.transports).toHaveLength(2);
+    expect(logger.transports.some(t => t instanceof transports.Console)).toBe(true);
+    expect(logger.transports.some(t => t instanceof ApplicationInsightsTransport)).toBe(true);
   });
 
   it('should set defaultMeta.service to shipit.api', async () => {

@@ -3,6 +3,12 @@ import { NextFunction, Request, Response } from 'express';
 import { logger } from '../../utils/logger';
 import { logRequests } from '../logRequests';
 
+// Mock the appInsightsClient module to prevent real telemetry calls
+jest.mock('../../utils/appInsights', () => ({
+  __esModule: true,
+  appInsightsClient: { trackException: jest.fn() }
+}));
+
 describe('logRequests middleware', () => {
   let mockReq: Partial<Request>;
   let mockRes: Partial<Response>;
