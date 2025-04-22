@@ -17,6 +17,7 @@ import {
   getErrorMessage,
   getErrorStatusCode,
 } from '../utils/errors.js';
+import { logger } from '../utils/logger.js';
 
 // Cache configuration
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
@@ -76,7 +77,7 @@ async function getPipelines(): Promise<Pipeline[]> {
 
     return setCachedData<Pipeline[]>(cacheKey, result);
   } catch (error) {
-    console.error('Error fetching pipelines:', error);
+    logger.error('Error fetching pipelines:', error);
     throw new ExternalAPIError(
       `Failed to fetch release pipelines: ${getErrorMessage(error)}`,
       getErrorStatusCode(error) || HttpStatusCode.SERVICE_UNAVAILABLE,
@@ -101,7 +102,7 @@ async function getBuildTimelineRecords(buildId: number): Promise<BuildTimelineRe
 
     return results.filter((result) => result.parentId === null);
   } catch (error) {
-    console.error('Error fetching build timeline:', error);
+    logger.error('Error fetching build timeline:', error);
     throw new ExternalAPIError(
       `Failed to fetch build pipeline: ${getErrorMessage(error)}`,
       getErrorStatusCode(error) || HttpStatusCode.SERVICE_UNAVAILABLE,
@@ -283,7 +284,7 @@ export async function getReleasedVersions(environment: ENVIRONMENT): Promise<Rel
     }
 
     // Otherwise, wrap in a general error
-    console.error('Error fetching released versions:', error);
+    logger.error('Error fetching released versions:', error);
     throw new ExternalAPIError(
       `Failed to fetch released versions for environment ${environment}: ${getErrorMessage(error)}`,
       HttpStatusCode.SERVICE_UNAVAILABLE,

@@ -1,6 +1,7 @@
 /// <reference types="node" />
 import { ErrorCode } from '../enums/errorCode.js';
 import { AppError } from '../utils/errors.js';
+import { logger } from '../utils/logger.js';
 
 export type NodeEnv = 'development' | 'production';
 
@@ -30,7 +31,7 @@ class ConfigService implements Environment {
     const validatedNodeEnv = ['development', 'production'].includes(nodeEnv)
       ? nodeEnv
       : (() => {
-          console.warn(`Invalid NODE_ENV: '${nodeEnv}' defaulting to 'development'`);
+          logger.warn(`Invalid NODE_ENV: '${nodeEnv}' defaulting to 'development'`);
           return 'development';
         })();
 

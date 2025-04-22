@@ -4,24 +4,18 @@ import { ConfigService } from '../configService.js';
 // Store original environment variables
 const originalEnv = { ...process.env };
 
-const originalConsoleWarning = console.warn;
-console.warn = jest.fn() as jest.Mock;
-
 describe('ConfigService', () => {
   // Reset modules before each test
   beforeEach(() => {
     // Clear Jest's module cache so we can reimport with fresh environment variables
     jest.resetModules();
 
-    (console.warn as jest.Mock).mockClear();
-    
     // Reset environment variables to a clean state before each test
     process.env = { ...originalEnv };
   });
 
   // Restore the original env after all tests
-  afterAll(() => {
-    console.warn = originalConsoleWarning;
+  afterAll(() => {    
     process.env = originalEnv;
   });
 
