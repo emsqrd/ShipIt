@@ -56,12 +56,17 @@ jobs:
           cp package*.json dist-deploy/
           cp -r dist dist-deploy/
           npm ci --production --prefix dist-deploy
+      - name: Zip lean deploy artifact
+        working-directory: backend
+        run: |
+          cd dist-deploy
+          zip -r ../dist-deploy.zip .
 
       - name: Upload backend build artifact
         uses: actions/upload-artifact@v4
         with:
           name: backend-build
-          path: backend/dist-deploy/**
+          path: backend/dist-deploy.zip
 
   deploy:
     if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/master'
@@ -83,18 +88,11 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: backend-build
-          path: dist-deploy
-
-      - name: Login to Azure
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_24030E42C0AF42EAB8D29726F17A1C3A }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_D785376F2DDD42398AC7F87383A1FEC5 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_6279B77E87C8401CAFC5D2C1A0B60B5D }}
+          path: .
 
       - name: 'Deploy to Azure Web App'
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
           app-name: 'shipit-api'
-          package: dist-deploy
+          package: dist-deploy.zip
