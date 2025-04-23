@@ -61,7 +61,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: backend-build
-          path: backend/dist-deploy
+          path: backend/dist-deploy/**
 
   deploy:
     if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/master'
@@ -83,7 +83,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: backend-build
-          path: backend
+          path: dist-deploy
 
       - name: Login to Azure
         uses: azure/login@v2
@@ -97,4 +97,4 @@ jobs:
         uses: azure/webapps-deploy@v3
         with:
           app-name: 'shipit-api'
-          package: backend/dist-deploy
+          package: dist-deploy
