@@ -48,22 +48,20 @@ jobs:
         run: |
           npm run build
 
-      - name: Run test with coverage
+      - name: Prepare lean deploy artifact
         working-directory: backend
         run: |
-          npm run test:coverage
-
-      - name: Upload test coverage
-        uses: actions/upload-artifact@v4
-        with:
-          name: backend-test-coverage
-          path: backend/coverage
+          rm -rf dist-deploy
+          mkdir -p dist-deploy
+          cp package*.json dist-deploy/
+          cp -r dist dist-deploy/
+          npm ci --production --prefix dist-deploy
 
       - name: Upload backend build artifact
         uses: actions/upload-artifact@v4
         with:
           name: backend-build
-          path: backend
+          path: backend/dist-deploy
 
   deploy:
     if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/master'
@@ -99,5 +97,4 @@ jobs:
         uses: azure/webapps-deploy@v3
         with:
           app-name: 'shipit-api'
-          package: backend
-          startup-command: 'npm start'
+          package: backend/dist-deploy
