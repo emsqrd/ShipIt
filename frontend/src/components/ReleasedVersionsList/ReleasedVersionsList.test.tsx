@@ -77,14 +77,10 @@ describe('ReleasedVersionsList', () => {
 
       // First version
       expect(screen.getByText('test-repo')).toBeInTheDocument();
-      expect(screen.getByText('main-pipeline')).toBeInTheDocument();
-      expect(screen.getByText('daily-build')).toBeInTheDocument();
       expect(screen.getByText('1.0.0')).toBeInTheDocument();
 
       // Second version
       expect(screen.getByText('test-repo-2')).toBeInTheDocument();
-      expect(screen.getByText('feature-pipeline')).toBeInTheDocument();
-      expect(screen.getByText('feature-build')).toBeInTheDocument();
       expect(screen.getByText('1.1.0')).toBeInTheDocument();
     });
 

@@ -1,11 +1,10 @@
 .version-item {
-  display: grid;
-  grid-template-columns: 350px 450px 200px 150px;
   padding: 14px 16px;
-  border-bottom: 1px solid #333333;
+  border: 1px solid #333333;
   align-items: center;
   transition: background-color 0.2s ease;
   border-radius: 4px;
+  margin-bottom: 10px;
 }
 
 .version-item:hover {
@@ -17,30 +16,40 @@
   box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.5);
 }
 
-.repo-column,
-.pipeline-column,
-.run-column,
-.version-column {
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+.version-item-main {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px;
+}
+
+.version-item-main:hover {
+  cursor: pointer;
+}
+
+.version-item-sub {
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px solid #333333;
+  padding: 10px;
 }
 
 .repo-name {
   color: #e2e8f0;
-  font-weight: 500;
   display: flex;
   align-items: center;
 }
 
 .pipeline-name {
   color: #cbd5e0;
-  font-weight: 400;
 }
 
 .run-name {
   color: #a0aec0;
-  font-size: 0.95em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  font-size: 0.9em;
 }
 
 .version-tag {

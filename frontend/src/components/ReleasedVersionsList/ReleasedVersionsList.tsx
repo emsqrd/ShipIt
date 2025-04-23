@@ -42,8 +42,6 @@ const ReleasedVersionsList: React.FC<ReleasedVersionsListProps> = ({ environment
       >
         <div className={styles['skeleton-cell']}></div>
         <div className={styles['skeleton-cell']}></div>
-        <div className={styles['skeleton-cell']}></div>
-        <div className={styles['skeleton-cell']}></div>
       </div>
     ));
 
@@ -81,7 +79,7 @@ const ReleasedVersionsList: React.FC<ReleasedVersionsListProps> = ({ environment
     return (
       <div className={styles['version-list']}>
         {releasedVersions.map((item) => (
-          <ReleasedVersionItem key={item.id} {...item} />
+          <ReleasedVersionItem key={item.id} releasedVersion={{ ...item }} />
         ))}
       </div>
     );
@@ -93,8 +91,6 @@ const ReleasedVersionsList: React.FC<ReleasedVersionsListProps> = ({ environment
         <div>
           <div className={styles['version-list-header']}>
             <span className={styles['repo-column']}>Repo</span>
-            <span className={styles['pipeline-column']}>Pipeline Name</span>
-            <span className={styles['run-column']}>Run Name</span>
             <span className={styles['version-column']}>Version</span>
           </div>
         </div>
