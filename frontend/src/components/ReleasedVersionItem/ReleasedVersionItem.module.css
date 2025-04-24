@@ -16,8 +16,20 @@
   box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.5);
 }
 
+.version-item label {
+  font-size: 0.7rem;
+  color: #a0aec0;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.version-column label {
+  padding-left: 4px;
+}
+
 .version-item-main {
-  display: flex;
+  display: grid;
+  grid-template-columns: 2fr 1fr;
   justify-content: space-between;
   padding: 10px;
 }
@@ -27,8 +39,8 @@
 }
 
 .version-item-sub {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 2fr 1fr;
   border-top: 1px solid #333333;
   padding: 10px;
 }
@@ -37,6 +49,19 @@
   color: #e2e8f0;
   display: flex;
   align-items: center;
+}
+
+.version-tag {
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  background-color: #234458;
+  color: #63b3ed;
+  border-radius: 16px;
+  font-weight: 500;
+  font-size: 0.9em;
+  white-space: nowrap;
+  max-width: fit-content;
 }
 
 .pipeline-name {
@@ -50,20 +75,6 @@
   justify-content: center;
   padding: 4px 10px;
   font-size: 0.9em;
-}
-
-.version-tag {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 4px 10px;
-  background-color: #234458;
-  color: #63b3ed;
-  font-weight: 500;
-  border-radius: 16px;
-  font-size: 0.9em;
-  white-space: nowrap;
-  max-width: fit-content;
 }
 
 /* Responsive design */

@@ -32,9 +32,11 @@ const ReleasedVersionItem: React.FC<ReleasedVersionItemProps> = ({ releasedVersi
     <div className={styles['version-item']}>
       <div className={styles['version-item-main']} onClick={() => handleReleasedItemClick()}>
         <span data-testid="repo-column" className={styles['repo-column']}>
+          <label>Repo</label>
           <div className={styles['repo-name']}>{releasedVersion.repo}</div>
         </span>
         <span data-testid="version-column" className={styles['version-column']}>
+          <label>Version</label>
           <div className={styles['version-tag']}>{releasedVersion.version}</div>
         </span>
       </div>

@@ -88,13 +88,6 @@ const ReleasedVersionsList: React.FC<ReleasedVersionsListProps> = ({ environment
   return (
     <div className={styles['container']}>
       <div data-testid="released-versions-table" className={styles['version-table']}>
-        <div>
-          <div className={styles['version-list-header']}>
-            <span className={styles['repo-column']}>Repo</span>
-            <span className={styles['version-column']}>Version</span>
-          </div>
-        </div>
-
         {renderContent()}
       </div>
     </div>
