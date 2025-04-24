@@ -1,6 +1,6 @@
 .version-item {
   padding: 14px 16px;
-  border: 1px solid #333333;
+  border: 1px solid #e2e8f0;
   align-items: center;
   transition: background-color 0.2s ease;
   border-radius: 4px;
@@ -8,7 +8,7 @@
 }
 
 .version-item:hover {
-  background-color: #333333;
+  background-color: #f6f6f6;
 }
 
 .version-item:focus {
@@ -18,7 +18,7 @@
 
 .version-item label {
   font-size: 0.7rem;
-  color: #a0aec0;
+  color: #4a5568;
   font-weight: 800;
   text-transform: uppercase;
 }
@@ -41,12 +41,12 @@
 .version-item-sub {
   display: grid;
   grid-template-columns: 2fr 1fr;
-  border-top: 1px solid #333333;
+  border-top: 1px solid #e2e8f0;
   padding: 10px;
 }
 
 .repo-name {
-  color: #e2e8f0;
+  color: #1a202c;
   display: flex;
   align-items: center;
 }
@@ -55,8 +55,8 @@
   align-items: center;
   justify-content: center;
   padding: 4px 10px;
-  background-color: #234458;
-  color: #63b3ed;
+  background-color: #e2e8f0;
+  color: #3182ce;
   border-radius: 16px;
   font-weight: 500;
   font-size: 0.9em;
@@ -65,11 +65,11 @@
 }
 
 .pipeline-name {
-  color: #cbd5e0;
+  color: #2d3748;
 }
 
 .run-name {
-  color: #a0aec0;
+  color: #4a5568;
   display: inline-flex;
   align-items: center;
   justify-content: center;

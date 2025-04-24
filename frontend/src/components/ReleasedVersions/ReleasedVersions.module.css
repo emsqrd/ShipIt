@@ -2,7 +2,7 @@
   max-width: 800px;
   margin: 0 auto;
   padding: 32px 20px;
-  background-color: #242424;
+  background-color: #ffffff;
   min-height: 100vh;
 }
 
@@ -23,12 +23,12 @@
   margin: 0;
   font-size: 2rem;
   font-weight: 700;
-  color: #e2e8f0;
+  color: #1a202c;
   letter-spacing: -0.5px;
 }
 
 .version-description {
-  color: #a0aec0;
+  color: #4a5568;
   font-size: 1.1rem;
   margin: 0;
   font-weight: 400;
