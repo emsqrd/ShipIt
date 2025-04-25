@@ -1,6 +1,6 @@
 .version-list-header {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
+  display: flex;
+  justify-content: space-between;
   padding: 14px 16px;
   font-weight: 600;
   font-size: 0.9rem;
@@ -8,19 +8,19 @@
   letter-spacing: 0.3px;
   text-transform: uppercase;
   border-bottom: 2px solid #e2e8f0;
-  margin-bottom: 10px;
+  margin-bottom: 20px;
 }
 
 .version-list {
-  list-style-type: none;
-  padding: 0;
-  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(365px, 1fr));
+  grid-gap: 1rem;
 }
 
 .container {
   background: #ffffff;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   padding: 24px;
   margin-bottom: 24px;
 }
