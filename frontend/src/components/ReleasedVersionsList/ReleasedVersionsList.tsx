@@ -79,7 +79,7 @@ const ReleasedVersionsList: React.FC<ReleasedVersionsListProps> = ({ environment
     return (
       <div className={styles['version-list']}>
         {releasedVersions.map((item) => (
-          <ReleasedVersionItem key={item.id} releasedVersion={{ ...item }} />
+          <ReleasedVersionItem key={`${item.repo}-${item.version}`} releasedVersion={{ ...item }} />
         ))}
       </div>
     );

@@ -16,14 +16,12 @@ describe('ReleasedVersionsList', () => {
   // Common test data
   const mockVersions: ReleasedVersion[] = [
     {
-      id: 1,
       repo: 'test-repo',
       pipelineName: 'main-pipeline',
       runName: 'daily-build',
       version: '1.0.0',
     },
     {
-      id: 2,
       repo: 'test-repo-2',
       pipelineName: 'feature-pipeline',
       runName: 'feature-build',

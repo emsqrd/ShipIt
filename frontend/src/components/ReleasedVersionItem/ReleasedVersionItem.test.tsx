@@ -5,7 +5,6 @@ import type { ReleasedVersion } from '../../contracts/ReleasedVersion';
 import ReleasedVersionItem from './ReleasedVersionItem';
 
 const mockReleaseVersionItem: ReleasedVersion = {
-  id: 123,
   repo: 'my-repo',
   pipelineName: 'Build and Deploy',
   runName: 'run #123',
