@@ -1,13 +1,9 @@
 .version-container {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 32px 20px;
-  background-color: #ffffff;
-  min-height: 100vh;
+  padding: 2rem;
 }
 
 .version-header-container {
-  margin-bottom: 32px;
+  margin-bottom: 2rem;
 }
 
 .header-flex-container {
@@ -15,54 +11,52 @@
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 16px;
-  margin-bottom: 8px;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .version-header {
   margin: 0;
-  font-size: 2rem;
+  font-size: 1.75rem;
   font-weight: 700;
-  color: #1a202c;
-  letter-spacing: -0.5px;
+  color: var(--dark-color);
+  letter-spacing: -0.01em;
 }
 
 .version-description {
-  color: #4a5568;
-  font-size: 1.1rem;
-  margin: 0;
+  color: var(--secondary-color);
+  font-size: 1rem;
+  margin: 0.5rem 0 0;
   font-weight: 400;
 }
 
 .environment-selector-container {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 0.75rem;
+  background-color: var(--light-color);
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--border-radius);
+  border: 1px solid var(--border-color);
 }
 
 .environment-label {
-  color: #a0aec0;
-  font-size: 1rem;
+  color: var(--secondary-color);
+  font-size: 0.875rem;
   font-weight: 500;
 }
 
 @media (max-width: 768px) {
   .version-container {
-    padding: 24px 16px;
-  }
-
-  .version-header {
-    font-size: 1.75rem;
-  }
-
-  .version-description {
-    font-size: 1rem;
+    padding: 1.25rem;
   }
 
   .header-flex-container {
     flex-direction: column;
     align-items: flex-start;
-    gap: 16px;
+    gap: 1rem;
   }
 
   .environment-selector-container {

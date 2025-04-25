@@ -14,33 +14,41 @@ const ReleasedVersionItem: React.FC<ReleasedVersionItemProps> = ({ releasedVersi
     setShowSubItem(!showSubItem);
   };
 
-  const renderSubItem = () => {
-    if (showSubItem) {
-      return (
-        <div className={styles['version-item-sub']}>
-          <span data-testid="pipeline-column" className={styles['pipeline-column']}>
-            <div className={styles['pipeline-name']}>{releasedVersion.pipelineName}</div>
-          </span>
-          <span data-testid="run-column" className={styles['run-column']}>
-            <div className={styles['run-name']}>{releasedVersion.runName}</div>
-          </span>
-        </div>
-      );
-    }
-  };
   return (
-    <div className={styles['version-item']}>
-      <div className={styles['version-item-main']} onClick={() => handleReleasedItemClick()}>
+    <div className={`${styles['version-item']} ${showSubItem ? styles['expanded'] : ''}`}>
+      <div
+        className={styles['version-item-main']}
+        onClick={handleReleasedItemClick}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleReleasedItemClick();
+          }
+        }}
+        role="button"
+        tabIndex={0}
+        aria-expanded={showSubItem}
+      >
         <span data-testid="repo-column" className={styles['repo-column']}>
-          <label>Repo</label>
           <div className={styles['repo-name']}>{releasedVersion.repo}</div>
         </span>
         <span data-testid="version-column" className={styles['version-column']}>
-          <label>Version</label>
           <div className={styles['version-tag']}>{releasedVersion.version}</div>
         </span>
+        <span className={styles['expand-icon']}>{showSubItem ? '▲' : '▼'}</span>
       </div>
-      {renderSubItem()}
+      {showSubItem && (
+        <div className={styles['version-item-sub']}>
+          <span data-testid="pipeline-column" className={styles['pipeline-column']}>
+            <label>Pipeline</label>
+            <div className={styles['pipeline-name']}>{releasedVersion.pipelineName}</div>
+          </span>
+          <span data-testid="run-column" className={styles['run-column']}>
+            <label>Run</label>
+            <div className={styles['run-name']}>{releasedVersion.runName}</div>
+          </span>
+        </div>
+      )}
     </div>
   );
 };

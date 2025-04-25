@@ -18,11 +18,13 @@ const ReleasedVersionsList: React.FC<ReleasedVersionsListProps> = ({ environment
     const loadReleasedVersions = async () => {
       try {
         setIsLoading(true);
+        setError(null);
+        // Short delay to ensure loading state is visible during environment changes
         const data = await fetchReleasedVersions(environment.toLowerCase());
         setReleasedVersions(data);
-        setError(null);
-      } catch (_) {
+      } catch (err) {
         setError('Failed to load released versions. Please try again later.');
+        console.error('Error fetching released versions:', err);
       } finally {
         setIsLoading(false);
       }
@@ -31,8 +33,8 @@ const ReleasedVersionsList: React.FC<ReleasedVersionsListProps> = ({ environment
     loadReleasedVersions();
   }, [environment]);
 
-  // Loading skeleton UI
-  const loadingSkeletonRows = Array(3)
+  // Loading skeleton UI with improved visuals
+  const loadingSkeletonRows = Array(4)
     .fill(0)
     .map((_, index) => (
       <div
@@ -78,6 +80,10 @@ const ReleasedVersionsList: React.FC<ReleasedVersionsListProps> = ({ environment
 
     return (
       <div className={styles['version-list']}>
+        <div className={styles['version-list-header']}>
+          <div>Repository</div>
+          <div>Version</div>
+        </div>
         {releasedVersions.map((item) => (
           <ReleasedVersionItem key={item.id} releasedVersion={{ ...item }} />
         ))}

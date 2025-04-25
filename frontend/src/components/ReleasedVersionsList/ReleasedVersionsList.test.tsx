@@ -48,7 +48,7 @@ describe('ReleasedVersionsList', () => {
 
       expect(screen.getByTestId('released-versions-table')).toBeInTheDocument();
       const skeletonRows = screen.getAllByTestId('skeleton-loader');
-      expect(skeletonRows.length).toBe(3);
+      expect(skeletonRows.length).toBe(4);
     });
 
     it('calls fetchReleasedVersions with the correct environment', async () => {

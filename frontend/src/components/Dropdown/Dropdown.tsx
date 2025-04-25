@@ -37,6 +37,13 @@ const Dropdown: React.FC<DropdownProps> = ({
     };
   }, []);
 
+  // Scroll selected option into view
+  useEffect(() => {
+    if (isDropdownOpen && selectedOptionRef.current) {
+      selectedOptionRef.current.scrollIntoView({ block: 'nearest' });
+    }
+  }, [isDropdownOpen]);
+
   const handleOptionChange = (option: string) => {
     onOptionChange(option);
     setIsDropdownOpen(false);
@@ -49,6 +56,19 @@ const Dropdown: React.FC<DropdownProps> = ({
   const handleKeyDown = (event: React.KeyboardEvent) => {
     if (event.key === 'Escape') {
       setIsDropdownOpen(false);
+    } else if (event.key === 'ArrowDown' && isDropdownOpen) {
+      event.preventDefault();
+      const currentIndex = options.indexOf(selectedOption);
+      const nextIndex = (currentIndex + 1) % options.length;
+      onOptionChange(options[nextIndex]);
+    } else if (event.key === 'ArrowUp' && isDropdownOpen) {
+      event.preventDefault();
+      const currentIndex = options.indexOf(selectedOption);
+      const prevIndex = (currentIndex - 1 + options.length) % options.length;
+      onOptionChange(options[prevIndex]);
+    } else if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      setIsDropdownOpen(!isDropdownOpen);
     }
   };
 
@@ -59,12 +79,23 @@ const Dropdown: React.FC<DropdownProps> = ({
         onClick={toggleDropdown}
         onKeyDown={handleKeyDown}
         data-testid="dropdown-toggle"
+        aria-haspopup="listbox"
+        aria-expanded={isDropdownOpen}
+        aria-label="Select environment"
       >
         <span data-testid="selected-option">{selectedOption}</span>
-        <span className={styles['dropdown-arrow']}>{isDropdownOpen ? '▲' : '▼'}</span>
+        <span className={`${styles['dropdown-arrow']} ${isDropdownOpen ? styles['open'] : ''}`}>
+          {isDropdownOpen ? '▲' : '▼'}
+        </span>
       </button>
       {isDropdownOpen && (
-        <ul className={styles['dropdown-options']} data-testid="dropdown-options">
+        <ul
+          className={styles['dropdown-options']}
+          data-testid="dropdown-options"
+          role="listbox"
+          aria-activedescendant={`env-option-${selectedOption.toLowerCase()}`}
+          tabIndex={-1}
+        >
           {options.map((option) => (
             <li
               key={option}
@@ -73,6 +104,8 @@ const Dropdown: React.FC<DropdownProps> = ({
               onClick={() => handleOptionChange(option)}
               data-testid="option"
               ref={selectedOption === option ? selectedOptionRef : null}
+              role="option"
+              aria-selected={selectedOption === option}
             >
               {option}
             </li>
