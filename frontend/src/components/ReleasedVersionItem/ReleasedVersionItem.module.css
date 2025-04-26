@@ -3,23 +3,28 @@
     since we're needing to have the front and back absolute we need to set 
     an aspect ratio to keep sizings preserved
   */
-  aspect-ratio: 3 / 1;
+  height: 150px;
+  border: 1px solid lightgray;
+
+  display: flex;
+  flex-direction: column;
 }
 
 .card {
-  width: 100%;
-  height: 100%;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
   position: relative;
-  border: 1px solid lightgray;
-
-  /* 
-    because flipping cards is dealing in 3d we need to preserve to back will show 
-    otherwise when flipped the front will display as mirror image
-  */
-  transform-style: preserve-3d;
 }
 
-.card.flipped {
+.cardInner {
+  flex: 1;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.6s ease;
+}
+
+.cardInner.flipped {
   transform: rotateY(180deg);
 }
 
@@ -34,31 +39,29 @@
 
 .front,
 .back {
-  /* take up the full space */
-  width: 100%;
-  height: 100%;
-
-  /* hide whatever is considered "the back" when a particular side is showing */
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-
-  /* position absolutely so each side will render in the top left corner when shown */
   position: absolute;
   top: 0;
   left: 0;
+  width: 100%;
+  height: 100%;
+  /* hide whatever is considered "the back" when a particular side is showing */
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
-.version-column label {
-  padding-left: 4px;
+.cardFooter {
+  /* static footer below flipping content */
+  border-top: 1px solid lightgray;
+  padding: 8px;
 }
 
-.repo-name {
+.repo {
   color: #1a202c;
   display: flex;
   align-items: center;
 }
 
-.version-tag {
+.version {
   align-items: center;
   justify-content: center;
   padding: 4px 10px;
@@ -66,22 +69,9 @@
   color: #3182ce;
   border-radius: 16px;
   font-weight: 500;
-  font-size: 0.9em;
+  font-size: 0.7em;
   white-space: nowrap;
   max-width: fit-content;
-}
-
-.pipeline-name {
-  color: #2d3748;
-}
-
-.run-name {
-  color: #4a5568;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 4px 10px;
-  font-size: 0.9em;
 }
 
 /* Responsive design */
