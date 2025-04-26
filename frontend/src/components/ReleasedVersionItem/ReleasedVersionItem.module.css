@@ -1,48 +1,26 @@
-.version-item {
-  padding: 14px 16px;
-  border: 1px solid #e2e8f0;
-  align-items: center;
-  transition: background-color 0.2s ease;
-  border-radius: 4px;
-  margin-bottom: 10px;
+.cardContainer {
+  width: 100%;
+  max-width: 400px;
 }
 
-.version-item:hover {
-  background-color: #f6f6f6;
+.card {
+  /* width: 100%;
+  height: 100%; */
+  position: relative;
+  border: 1px solid lightgray;
 }
 
-.version-item:focus {
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.5);
-}
-
-.version-item label {
-  font-size: 0.7rem;
-  color: #4a5568;
-  font-weight: 800;
-  text-transform: uppercase;
+.front,
+.back {
+  width: 100%;
+  height: 100%;
+  /* position: absolute; */
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 .version-column label {
   padding-left: 4px;
-}
-
-.version-item-main {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  justify-content: space-between;
-  padding: 10px;
-}
-
-.version-item-main:hover {
-  cursor: pointer;
-}
-
-.version-item-sub {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  border-top: 1px solid #e2e8f0;
-  padding: 10px;
 }
 
 .repo-name {
