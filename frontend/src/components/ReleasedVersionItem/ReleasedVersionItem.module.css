@@ -1,22 +1,51 @@
 .cardContainer {
-  width: 100%;
-  max-width: 400px;
+  /* 
+    since we're needing to have the front and back absolute we need to set 
+    an aspect ratio to keep sizings preserved
+  */
+  aspect-ratio: 3 / 1;
 }
 
 .card {
-  /* width: 100%;
-  height: 100%; */
+  width: 100%;
+  height: 100%;
   position: relative;
   border: 1px solid lightgray;
+
+  /* 
+    because flipping cards is dealing in 3d we need to preserve to back will show 
+    otherwise when flipped the front will display as mirror image
+  */
+  transform-style: preserve-3d;
+}
+
+.card.flipped {
+  transform: rotateY(180deg);
+}
+
+.front {
+  transform: rotateY(0deg);
+}
+
+/* back is flipped on render so when card is flipped it'll be shown */
+.back {
+  transform: rotateY(180deg);
 }
 
 .front,
 .back {
+  /* take up the full space */
   width: 100%;
   height: 100%;
-  /* position: absolute; */
+
+  /* hide whatever is considered "the back" when a particular side is showing */
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
+
+  /* position absolutely so each side will render in the top left corner when shown */
+  position: absolute;
+  top: 0;
+  left: 0;
 }
 
 .version-column label {
