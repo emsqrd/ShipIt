@@ -15,28 +15,38 @@ const ReleasedVersionItem: React.FC<ReleasedVersionItemProps> = ({ releasedVersi
       <div className={styles.card}>
         <div className={`${styles.cardInner} ${isFlipped ? styles.flipped : ''}`}>
           <div className={styles.front}>
-            <span data-testid="repo-column">
-              <div className={styles.repo}>{releasedVersion.repo}</div>
-            </span>
-            <span data-testid="version-column">
-              <div className={styles.version}>{releasedVersion.version}</div>
-            </span>
+            <div className={styles.cardContent}>
+              <div data-testid="repo-column" className={styles.repoSection}>
+                <div className={styles.repo}>{releasedVersion.repo}</div>
+              </div>
+              <div data-testid="version-column" className={styles.versionSection}>
+                <div className={styles.version}>{releasedVersion.version}</div>
+              </div>
+            </div>
           </div>
           <div className={styles.back}>
-            <span data-testid="pipeline-column">
-              <label>Pipeline</label>
-              <div className={styles.pipeline}>{releasedVersion.pipelineName}</div>
-            </span>
-            <span data-testid="run-column">
-              <label>Run</label>
-              <div className={styles.run}>{releasedVersion.runName}</div>
-            </span>
+            <div className={styles.cardContent}>
+              <div data-testid="pipeline-column" className={styles.pipeline}>
+                <label>Pipeline</label>
+                <div className={styles.pipeline}>{releasedVersion.pipelineName}</div>
+              </div>
+              <div data-testid="run-column" className={styles.run}>
+                <label>Run</label>
+                <div className={styles.run}>{releasedVersion.runName}</div>
+              </div>
+            </div>
           </div>
         </div>
         <div className={styles.cardFooter}>
-          <button type="button" onClick={() => setFlipped((f) => !f)}>
-            Details
-          </button>
+          <div className={styles.buttonContainer}>
+            <button
+              className={styles.detailsButton}
+              type="button"
+              onClick={() => setFlipped((f) => !f)}
+            >
+              {isFlipped ? 'Back' : 'Details'}
+            </button>
+          </div>
         </div>
       </div>
     </div>

@@ -9,7 +9,7 @@
 .version-list {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  grid-gap: 0.5rem;
+  grid-gap: 1rem;
 }
 
 .version-list-header {
