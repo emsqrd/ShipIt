@@ -7,47 +7,42 @@ label {
 }
 
 .cardContainer {
-  display: flex;
-  flex-direction: column;
-  border: 1px solid lightgray;
-}
-
-.cardInner {
-  display: grid;
-  transform-style: preserve-3d;
-  transition: transform 0.6s ease;
-  font-weight: 500;
-  font-size: 0.9rem;
+  perspective: 1000px;
 }
 
 .card {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+  grid-template-areas: 'cardface';
   position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.6s ease;
+  border: 1px solid lightgray;
+  background-color: white;
+  border-radius: 8px;
 }
 
-.cardInner.flipped {
+.flipped {
   transform: rotateY(180deg);
+}
+
+.front,
+.back {
+  grid-area: cardface;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 .front {
   transform: rotateY(0deg);
 }
 
-/* back is flipped on render so when card is flipped it'll be shown */
 .back {
   transform: rotateY(180deg);
-}
-
-.front,
-.back {
-  grid-area: 1 / 1;
-  width: 100%;
-  height: 100%;
-  /* hide whatever is considered "the back" when a particular side is showing */
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
 }
 
 .cardContent {
@@ -74,9 +69,6 @@ label {
 }
 
 .cardFooter {
-  display: grid;
-  grid-template-columns: 50% 50%;
-  grid-template-areas: '. button';
   border-top: 1px solid lightgray;
 }
 
@@ -84,7 +76,6 @@ label {
   grid-area: button;
   display: flex;
   align-items: stretch;
-  border-left: 1px solid lightgray;
 }
 
 .detailsButton {
@@ -93,16 +84,9 @@ label {
   padding: 0.5rem;
   flex: 1;
   position: relative;
-  overflow: hidden;
+  border-radius: 0 0 8px 8px;
 }
 
 .detailsButton:hover {
   cursor: pointer;
-}
-
-.detailsButton span {
-  display: inline-block;
-  transition:
-    opacity 0.3s ease,
-    transform 0.3s ease;
 }
