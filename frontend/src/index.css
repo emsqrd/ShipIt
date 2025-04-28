@@ -7,11 +7,11 @@
   input,
   select,
   textarea {
-    font: inherit; /* or font-family: inherit; */
+    font-family: inherit;
   }
   color-scheme: light;
   color: rgba(0, 0, 0, 0.87);
-  background-color: #f6f6f6;
+  background-color: #ffffff;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
