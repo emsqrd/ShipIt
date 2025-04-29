@@ -1,5 +1,6 @@
 import { useState } from 'react';
 
+import azureRepoIcon from '../../assets/azure_repo.svg';
 import type { ReleasedVersion } from '../../contracts/ReleasedVersion';
 import styles from './ReleasedVersionItem.module.css';
 
@@ -16,6 +17,9 @@ const ReleasedVersionItem: React.FC<ReleasedVersionItemProps> = ({ releasedVersi
         <div className={styles.front}>
           <div className={styles.cardContent}>
             <div data-testid="repo-column" className={styles.repoSection}>
+              <span className={styles.badgeIcon}>
+                <img src={azureRepoIcon} className={styles.badgeIconImage} />
+              </span>
               <div className={styles.repo}>{releasedVersion.repo}</div>
             </div>
             <div data-testid="version-column" className={styles.versionSection}>

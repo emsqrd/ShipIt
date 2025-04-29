@@ -57,6 +57,11 @@ label {
   padding-top: 10px;
 }
 
+.repoSection {
+  display: flex;
+  align-items: center;
+}
+
 .repo {
   color: #2d3748;
   font-weight: 600;
@@ -67,7 +72,12 @@ label {
 .repo,
 .pipeline,
 .run {
-  font-size: 0.8rem;
+  font-size: 0.9rem;
+}
+
+.badgeIconImage {
+  width: 32px;
+  height: 32px;
 }
 
 .version {
@@ -78,7 +88,7 @@ label {
   color: #3182ce;
   border-radius: 16px;
   font-weight: 500;
-  font-size: 0.7em;
+  font-size: 0.8em;
   white-space: nowrap;
   max-width: fit-content;
 }
@@ -100,7 +110,7 @@ label {
   flex: 1;
   position: relative;
   border-radius: 0 0 8px 8px;
-  font-size: 0.8rem;
+  font-size: 1rem;
 }
 
 .detailsButton:hover {
