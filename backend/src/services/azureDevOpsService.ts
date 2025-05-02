@@ -275,15 +275,34 @@ export async function getReleasedVersions(environment: ENVIRONMENT): Promise<Rel
     const latestRuns = getMostRecentRunPerRepo(filteredPipelineRuns);
     logger.debug(`After deduplication, ${latestRuns.length} latest runs per repo returned`);
 
+    const PREFIX = 'insurance_uw_us-rct-';
+
     // Map the results into the final format
-    const releasedVersions: ReleasedVersion[] = latestRuns.map((pipelineRun) => ({
-      repo: pipelineRun.pipelineRunDetail.repo,
-      pipelineId: pipelineRun.pipelineId,
-      pipelineName: pipelineRun.pipelineName,
-      runId: pipelineRun.id,
-      runName: pipelineRun.name,
-      version: pipelineRun.pipelineRunDetail.version,
-    }));
+    const releasedVersions: ReleasedVersion[] = latestRuns.map((pipelineRun) => {
+      const rawRepo = pipelineRun.pipelineRunDetail.repo;
+      let repo = rawRepo.startsWith(PREFIX) ? rawRepo.slice(PREFIX.length) : rawRepo;
+
+      // Replace underscores and dashes with spaces and capitalize each word
+      repo = repo
+        // First replace dashes with underscores so we can process them together
+        .replace(/-/g, '_')
+        .split('_')
+        .map((word) => {
+          // Replace "svc" with "service"
+          const wordToUse = word === 'svc' ? 'service' : word;
+          return wordToUse.charAt(0).toUpperCase() + wordToUse.slice(1);
+        })
+        .join(' ');
+
+      return {
+        repo: repo,
+        pipelineId: pipelineRun.pipelineId,
+        pipelineName: pipelineRun.pipelineName,
+        runId: pipelineRun.id,
+        runName: pipelineRun.name,
+        version: pipelineRun.pipelineRunDetail.version,
+      };
+    });
 
     return releasedVersions;
   } catch (error) {

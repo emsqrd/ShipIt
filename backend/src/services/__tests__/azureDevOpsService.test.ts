@@ -195,11 +195,11 @@ const mockPipelineRunFixtures = {
 };
 
 const mockPipelineRunDetailsFixtures = {
-  pipelineRun1Repo1: createMockPipelineRunDetails(1, 'PipelineRun1Details', 'repo1', '1.0.0'),
-  pipelineRun3Repo1: createMockPipelineRunDetails(3, 'PipelineRun3Details', 'repo1', '1.0.0'),
-  pipelineRun4Repo1: createMockPipelineRunDetails(4, 'PipelineRun4Details', 'repo1', '1.0.0'),
-  pipelineRun4Repo4: createMockPipelineRunDetails(4, 'PipelineRun4Details', 'repo4', '1.0.0'),
-  missingArtifactPipelineRunDetails: createMockPipelineRunDetails(1, 'PipelineRun1Details', 'repo1', '1.0.0', false),
+  pipelineRun1Repo1: createMockPipelineRunDetails(1, 'PipelineRun1Details', 'Repo1', '1.0.0'),
+  pipelineRun3Repo1: createMockPipelineRunDetails(3, 'PipelineRun3Details', 'Repo1', '1.0.0'),
+  pipelineRun4Repo1: createMockPipelineRunDetails(4, 'PipelineRun4Details', 'Repo1', '1.0.0'),
+  pipelineRun4Repo4: createMockPipelineRunDetails(4, 'PipelineRun4Details', 'Repo4', '1.0.0'),
+  missingArtifactPipelineRunDetails: createMockPipelineRunDetails(1, 'PipelineRun1Details', 'Repo1', '1.0.0', false),
 };
 
 const mockBuildTimelineFixtures = {
@@ -208,12 +208,12 @@ const mockBuildTimelineFixtures = {
 }
 
 const mockReleasedVersionsFixtures = {
-  pipeline1Run1Repo1: createMockReleasedVersion('repo1', 1, 'Pipeline1', 1, 'PipelineRun1'),
-  pipeline1Run2Repo1: createMockReleasedVersion('repo1', 1, 'Pipeline1', 2, 'PipelineRun2'),
-  pipeline1Run3Repo1: createMockReleasedVersion('repo1', 1, 'Pipeline1', 3, 'PipelineRun3'),
-  pipeline2Run4Repo1: createMockReleasedVersion('repo1', 2, 'Pipeline2', 4, 'PipelineRun4'),
-  pipeline2Run4Repo4: createMockReleasedVersion('repo4', 2, 'Pipeline2', 4, 'PipelineRun4'),
-  pipeline4Run3Repo1: createMockReleasedVersion('repo1', 1, 'Pipeline1', 3, 'PipelineRun3'),
+  pipeline1Run1Repo1: createMockReleasedVersion('Repo1', 1, 'Pipeline1', 1, 'PipelineRun1'),
+  pipeline1Run2Repo1: createMockReleasedVersion('Repo1', 1, 'Pipeline1', 2, 'PipelineRun2'),
+  pipeline1Run3Repo1: createMockReleasedVersion('Repo1', 1, 'Pipeline1', 3, 'PipelineRun3'),
+  pipeline2Run4Repo1: createMockReleasedVersion('Repo1', 2, 'Pipeline2', 4, 'PipelineRun4'),
+  pipeline2Run4Repo4: createMockReleasedVersion('Repo4', 2, 'Pipeline2', 4, 'PipelineRun4'),
+  pipeline4Run3Repo1: createMockReleasedVersion('Repo1', 1, 'Pipeline1', 3, 'PipelineRun3'),
 }
 
 let loggerErrorSpy: ReturnType<typeof jest.spyOn>;
