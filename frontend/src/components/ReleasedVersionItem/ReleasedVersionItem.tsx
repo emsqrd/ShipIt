@@ -1,6 +1,5 @@
 import { useState } from 'react';
 
-import azureRepoIcon from '../../assets/azure_repo.svg';
 import type { ReleasedVersion } from '../../contracts/ReleasedVersion';
 import styles from './ReleasedVersionItem.module.css';
 
@@ -13,52 +12,75 @@ const ReleasedVersionItem: React.FC<ReleasedVersionItemProps> = ({ releasedVersi
 
   return (
     <div className={styles.cardContainer}>
-      <div className={`${styles.card} ${isFlipped ? styles.flipped : ''}`}>
+      <div
+        className={`${styles.card} ${isFlipped ? styles.flipped : ''}`}
+        role="region"
+        aria-label={`Release information for ${releasedVersion.repo}`}
+      >
         <div className={styles.front}>
+          <div className={styles.cardHeader}>
+            <div className={styles.cardBadge}>Release</div>
+          </div>
           <div className={styles.cardContent}>
             <div data-testid="repo-column" className={styles.repoSection}>
-              <span className={styles.badgeIcon}>
-                <img src={azureRepoIcon} className={styles.badgeIconImage} />
-              </span>
-              <div className={styles.repo}>{releasedVersion.repo}</div>
+              <h3 className={styles.repoName} title={releasedVersion.repo}>
+                {releasedVersion.repo}
+              </h3>
             </div>
             <div data-testid="version-column" className={styles.versionSection}>
-              <div className={styles.version}>{releasedVersion.version}</div>
+              <div className={styles.versionLabel}>Version</div>
+              <div className={styles.version} title={releasedVersion.version}>
+                {releasedVersion.version}
+              </div>
             </div>
           </div>
           <div className={styles.cardFooter}>
-            <div className={styles.buttonContainer}>
-              <button
-                className={styles.detailsButton}
-                type="button"
-                onClick={() => setFlipped((f) => !f)}
-              >
-                Details
-              </button>
-            </div>
+            <button
+              className={styles.detailsButton}
+              type="button"
+              onClick={() => setFlipped(true)}
+              aria-label={`Show pipeline details for ${releasedVersion.repo}`}
+            >
+              <span>Show Pipeline Details</span>
+              <span className={styles.buttonIcon}>→</span>
+            </button>
           </div>
         </div>
         <div className={styles.back}>
+          <div className={styles.cardHeader}>
+            <div className={styles.cardBadge}>Pipeline Details</div>
+          </div>
           <div className={styles.cardContent}>
-            <div data-testid="pipeline-column" className={styles.pipeline}>
-              <label>Pipeline</label>
-              <div className={styles.pipeline}>{releasedVersion.pipelineName}</div>
+            <div className={styles.backInfoSection}>
+              <div data-testid="pipeline-column" className={styles.infoItem}>
+                <h4 className={styles.infoLabel}>Pipeline</h4>
+                <div className={styles.infoValue} title={releasedVersion.pipelineName}>
+                  {releasedVersion.pipelineName}
+                </div>
+              </div>
+              <div data-testid="run-column" className={styles.infoItem}>
+                <h4 className={styles.infoLabel}>Run</h4>
+                <div className={styles.infoValue} title={releasedVersion.runName}>
+                  {releasedVersion.runName}
+                </div>
+              </div>
             </div>
-            <div data-testid="run-column" className={styles.run}>
-              <label>Run</label>
-              <div className={styles.run}>{releasedVersion.runName}</div>
+            <div className={styles.versionSummary}>
+              <span className={styles.summaryLabel}>Repository:</span> {releasedVersion.repo}
+              <br />
+              <span className={styles.summaryLabel}>Version:</span> {releasedVersion.version}
             </div>
           </div>
           <div className={styles.cardFooter}>
-            <div className={styles.buttonContainer}>
-              <button
-                className={styles.detailsButton}
-                type="button"
-                onClick={() => setFlipped((f) => !f)}
-              >
-                Back
-              </button>
-            </div>
+            <button
+              className={`${styles.detailsButton} ${styles.backButton}`}
+              type="button"
+              onClick={() => setFlipped(false)}
+              aria-label="Return to version information"
+            >
+              <span className={styles.buttonIcon}>←</span>
+              <span>Back to Version</span>
+            </button>
           </div>
         </div>
       </div>

@@ -1,118 +1,223 @@
-label {
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: #718096;
-  text-transform: uppercase;
-  margin-bottom: 4px;
-}
-
+/* Card Container and Base Structure */
 .cardContainer {
-  perspective: 1000px;
+  perspective: 1500px;
+  margin: 1rem;
+  width: 320px;
+  height: 400px; /* Increased height to ensure button visibility */
 }
 
 .card {
-  display: grid;
-  grid-template-columns: 1fr;
-  grid-template-rows: 1fr;
-  grid-template-areas: 'cardface';
   position: relative;
+  width: 100%;
+  height: 100%;
   transform-style: preserve-3d;
-  transition: transform 0.6s ease;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 12px;
   box-shadow:
-    0 1px 3px 0 rgb(0 0 0 / 0.1),
-    0 1px 2px -1px rgb(0 0 0 / 0.1);
-  background-color: white;
-  border-radius: 8px;
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  cursor: default;
+}
+
+.card:hover {
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
 .flipped {
   transform: rotateY(180deg);
 }
 
+/* Card Faces */
 .front,
 .back {
-  grid-area: cardface;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+  position: absolute;
+  width: 100%;
+  height: 100%;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
+  display: flex;
+  flex-direction: column;
+  border-radius: 12px;
+  background-color: white;
+  overflow: hidden;
 }
 
 .front {
   transform: rotateY(0deg);
+  border: 1px solid #e5e7eb;
 }
 
 .back {
   transform: rotateY(180deg);
+  border: 1px solid #e5e7eb;
 }
 
+/* Card Header */
+.cardHeader {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #f3f4f6;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.cardBadge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  background-color: #ebf5ff;
+  color: #3b82f6;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  letter-spacing: 0.05em;
+}
+
+/* Card Content */
 .cardContent {
+  flex: 1;
+  padding: 1rem;
   display: flex;
   flex-direction: column;
-  padding: 20px 20px 10px 20px;
 }
 
-.versionSection {
-  padding-top: 10px;
-}
-
+/* Repository Section */
 .repoSection {
-  display: flex;
-  align-items: center;
+  margin-bottom: 1rem;
+  text-align: center;
 }
 
-.repo {
-  color: #2d3748;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
+.repoName {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.2;
 }
 
-.repo,
-.pipeline,
-.run {
-  font-size: 0.9rem;
+/* Version Section */
+.versionSection {
+  text-align: center;
 }
 
-.badgeIconImage {
-  width: 32px;
-  height: 32px;
+.versionLabel {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
 }
 
 .version {
-  align-items: center;
-  justify-content: center;
-  padding: 4px 10px;
-  background-color: #e2e8f0;
-  color: #3182ce;
-  border-radius: 16px;
-  font-weight: 500;
-  font-size: 0.8em;
-  white-space: nowrap;
-  max-width: fit-content;
+  display: inline-block;
+  background-color: #f0f9ff;
+  color: #0369a1;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 1rem;
+  border: 1px solid #bae6fd;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
-.cardFooter {
-  border-top: 1px solid #e5e7eb;
-}
-
-.buttonContainer {
-  grid-area: button;
+/* Back Face Info */
+.backInfoSection {
   display: flex;
-  align-items: stretch;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.infoItem {
+  display: flex;
+  flex-direction: column;
+}
+
+.infoLabel {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #6b7280;
+  margin: 0 0 0.25rem 0;
+}
+
+.infoValue {
+  font-size: 1rem;
+  color: #1f2937;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.versionSummary {
+  margin-top: auto;
+  font-size: 0.875rem;
+  color: #4b5563;
+  background-color: #f9fafb;
+  padding: 0.75rem;
+  border-radius: 6px;
+  line-height: 1.5;
+}
+
+.summaryLabel {
+  font-weight: 600;
+  color: #374151;
+}
+
+/* Footer and Buttons */
+.cardFooter {
+  padding: 0.75rem;
+  border-top: 1px solid #f3f4f6;
+  display: flex;
+  position: relative;
+  z-index: 10;
 }
 
 .detailsButton {
-  background-color: white;
-  border: none;
-  padding: 0.5rem;
-  flex: 1;
-  position: relative;
-  border-radius: 0 0 8px 8px;
-  font-size: 1rem;
+  width: 100%;
+  background-color: #eef2ff;
+  border: 1px solid #c7d2fe;
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #4f46e5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .detailsButton:hover {
-  cursor: pointer;
+  background-color: #e0e7ff;
+  color: #4338ca;
+  border-color: #a5b4fc;
+}
+
+.detailsButton:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+.buttonIcon {
+  margin-left: 0.5rem;
+  font-size: 1.1rem;
+  font-weight: bold;
+}
+
+.backButton .buttonIcon {
+  margin-left: 0;
+  margin-right: 0.5rem;
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
+  .cardContainer {
+    width: 100%;
+    max-width: 320px;
+  }
 }
