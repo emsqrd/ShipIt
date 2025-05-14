@@ -64,11 +64,12 @@ const ReleasedVersionItem: React.FC<ReleasedVersionItemProps> = ({ releasedVersi
                   {releasedVersion.runName}
                 </div>
               </div>
-            </div>
-            <div className={styles.versionSummary}>
-              <span className={styles.summaryLabel}>Repository:</span> {releasedVersion.repo}
-              <br />
-              <span className={styles.summaryLabel}>Version:</span> {releasedVersion.version}
+              <div data-testid="run-column" className={styles.infoItem}>
+                <h4 className={styles.infoLabel}>Repository</h4>
+                <div className={styles.infoValue} title={releasedVersion.repo}>
+                  {releasedVersion.runName}
+                </div>
+              </div>
             </div>
           </div>
           <div className={styles.cardFooter}>
