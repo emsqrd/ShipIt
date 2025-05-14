@@ -135,6 +135,8 @@ const createMockPipelineRun = (id: number, name: string, createdDate: string, en
   id,
   name,
   createdDate,
+  state: 'completed',
+  result: 'succeeded',
   templateParameters: env ? { 
     env
   } : {},

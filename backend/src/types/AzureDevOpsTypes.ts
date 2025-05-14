@@ -14,6 +14,8 @@ export type PipelineRunResponse = {
     templateParameters: {
       env?: string;
     };
+    state: string;
+    result: string;
     createdDate: string;
   }[];
 };

@@ -186,9 +186,9 @@ async function getMostRecentReleasePipelineRunByEnvironment(
 
   if (!allRuns || allRuns.length === 0) return null;
 
-  const sortedRuns = allRuns.sort(
-    (a, b) => new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime(),
-  );
+  const sortedRuns = allRuns
+    .filter((run) => run.result === 'succeeded' && run.state === 'completed')
+    .sort((a, b) => new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime());
 
   // Get the most recent run for the environment
   if (pipeline.folder === config.MANUAL_RELEASE_DIRECTORY) {
