@@ -154,6 +154,10 @@ async function findSuccessfulPipelineRunByStage(
     [ENVIRONMENT.INT, 'IntDeploy'],
   ]);
 
+  // const environmentMap = new Map<ENVIRONMENT, string>([
+  //   [ENVIRONMENT.PERF1_2]
+  // ])
+
   const stageName = stageNameMap.get(environment);
   if (!stageName) return null;
 
@@ -192,7 +196,26 @@ async function getMostRecentReleasePipelineRunByEnvironment(
 
   // Get the most recent run for the environment
   if (pipeline.folder === config.MANUAL_RELEASE_DIRECTORY) {
-    mostRecentPipelineRun = sortedRuns.find((run) => run.templateParameters?.env === environment);
+    const perfEnvironments = [ENVIRONMENT.PERF1, ENVIRONMENT.PERF2];
+    const prodEnvironments = [ENVIRONMENT.PROD1, ENVIRONMENT.PROD2];
+
+    // start with the target environment
+    const combinedEnvironments = [environment];
+
+    // if it's one of the perf environments, add PERF1_2
+    if (perfEnvironments.includes(environment)) {
+      combinedEnvironments.push(ENVIRONMENT.PERF1_2);
+    }
+
+    if (prodEnvironments.includes(environment)) {
+      combinedEnvironments.push(ENVIRONMENT.PROD1_2);
+    }
+
+    // pick the first run whose env is in that list
+    mostRecentPipelineRun = sortedRuns.find((run) => {
+      const env = run.templateParameters?.env as ENVIRONMENT | undefined;
+      return env !== undefined && combinedEnvironments.includes(env);
+    });
   } else if (pipeline.folder === config.AUTOMATED_RELEASE_DIRECTORY) {
     mostRecentPipelineRun = await findSuccessfulPipelineRunByStage(sortedRuns, environment);
   }
