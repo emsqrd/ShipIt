@@ -3,17 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import ReleasedVersions from './ReleasedVersions';
 
-const ENVIRONMENT_OPTIONS = [
-  'DEV',
-  'INT',
-  'UAT',
-  'PERF1',
-  'PERF2',
-  'PERF1_2',
-  'PROD1',
-  'PROD2',
-  'PROD1_2',
-];
+const ENVIRONMENT_OPTIONS = ['DEV', 'INT', 'UAT', 'PERF1', 'PERF2', 'PROD1', 'PROD2'];
 
 const mocks = vi.hoisted(() => {
   return {

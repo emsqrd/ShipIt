@@ -7,17 +7,7 @@ import styles from './ReleasedVersions.module.css';
 const LOCAL_STORAGE_KEY = 'selectedEnvironment';
 
 const ReleasedVersions: React.FC = () => {
-  const environments = [
-    'DEV',
-    'INT',
-    'UAT',
-    'PERF1',
-    'PERF2',
-    'PERF1_2',
-    'PROD1',
-    'PROD2',
-    'PROD1_2',
-  ];
+  const environments = ['DEV', 'INT', 'UAT', 'PERF1', 'PERF2', 'PROD1', 'PROD2'];
 
   const [selectedEnvironment, setSelectedEnvironment] = useState(() => {
     const savedEnv = localStorage.getItem(LOCAL_STORAGE_KEY);
