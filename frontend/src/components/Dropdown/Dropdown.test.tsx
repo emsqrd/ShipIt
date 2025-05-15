@@ -77,6 +77,15 @@ describe('Dropdown component', () => {
         expect(optionText).toHaveTextContent(mockOptions[index]);
       });
     });
+
+    it('scrolls to the selected option when opened', () => {
+      // Render with a non-first selected option to ensure scrolling is needed
+      renderDropdown(['Option 1', 'Option 2', 'Option 3'], 'Option 2');
+      // Open the dropdown to trigger scrollIntoView
+      openDropdown();
+      // Expect scrollIntoView called with center-alignment
+      expect(Element.prototype.scrollIntoView).toHaveBeenCalledWith({ block: 'center' });
+    });
   });
 
   describe('interaction behavior', () => {

@@ -154,6 +154,10 @@ async function findSuccessfulPipelineRunByStage(
     [ENVIRONMENT.INT, 'IntDeploy'],
   ]);
 
+  // const environmentMap = new Map<ENVIRONMENT, string>([
+  //   [ENVIRONMENT.PERF1_2]
+  // ])
+
   const stageName = stageNameMap.get(environment);
   if (!stageName) return null;
 
@@ -186,13 +190,29 @@ async function getMostRecentReleasePipelineRunByEnvironment(
 
   if (!allRuns || allRuns.length === 0) return null;
 
-  const sortedRuns = allRuns.sort(
-    (a, b) => new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime(),
-  );
+  const sortedRuns = allRuns
+    .filter((run) => run.result === 'succeeded' && run.state === 'completed')
+    .sort((a, b) => new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime());
 
   // Get the most recent run for the environment
   if (pipeline.folder === config.MANUAL_RELEASE_DIRECTORY) {
-    mostRecentPipelineRun = sortedRuns.find((run) => run.templateParameters?.env === environment);
+    // PERF & PROD have pipelines that allow for deploying to both environments so we need to account for that
+    const pairedEnv: Partial<Record<ENVIRONMENT, ENVIRONMENT>> = {
+      [ENVIRONMENT.PERF1]: ENVIRONMENT.PERF1_2,
+      [ENVIRONMENT.PERF2]: ENVIRONMENT.PERF1_2,
+      [ENVIRONMENT.PROD1]: ENVIRONMENT.PROD1_2,
+      [ENVIRONMENT.PROD2]: ENVIRONMENT.PROD1_2,
+    };
+
+    const combinedEnvironments = [environment, pairedEnv[environment]].filter(
+      (env): env is ENVIRONMENT => !!env,
+    );
+
+    // pick the first run whose env is in that list
+    mostRecentPipelineRun = sortedRuns.find((run) => {
+      const env = run.templateParameters?.env as ENVIRONMENT | undefined;
+      return env !== undefined && combinedEnvironments.includes(env);
+    });
   } else if (pipeline.folder === config.AUTOMATED_RELEASE_DIRECTORY) {
     mostRecentPipelineRun = await findSuccessfulPipelineRunByStage(sortedRuns, environment);
   }

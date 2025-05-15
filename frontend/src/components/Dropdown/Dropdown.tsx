@@ -37,6 +37,13 @@ const Dropdown: React.FC<DropdownProps> = ({
     };
   }, []);
 
+  // Scroll selected option into view when dropdown opens
+  useEffect(() => {
+    if (isDropdownOpen && selectedOptionRef.current) {
+      selectedOptionRef.current.scrollIntoView({ block: 'center' });
+    }
+  }, [isDropdownOpen]);
+
   const handleOptionChange = (option: string) => {
     onOptionChange(option);
     setIsDropdownOpen(false);

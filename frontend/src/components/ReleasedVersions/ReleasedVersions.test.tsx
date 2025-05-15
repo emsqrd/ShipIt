@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import ReleasedVersions from './ReleasedVersions';
 
+const ENVIRONMENT_OPTIONS = ['DEV', 'INT', 'UAT', 'PERF1', 'PERF2', 'PROD1', 'PROD2'];
+
 const mocks = vi.hoisted(() => {
   return {
     mockReleasedVersionsList: vi.fn(() => (
@@ -70,7 +72,7 @@ describe('ReleasedVersions component', () => {
 
       expect(mocks.mockDropdown).toHaveBeenCalledWith(
         {
-          options: ['DEV', 'INT', 'UAT', 'PERF1'],
+          options: ENVIRONMENT_OPTIONS,
           selectedOption: 'UAT',
           storageKey: 'selectedEnvironment',
           onOptionChange: expect.any(Function),
@@ -95,7 +97,7 @@ describe('ReleasedVersions component', () => {
 
       expect(mocks.mockDropdown).toHaveBeenCalledWith(
         {
-          options: ['DEV', 'INT', 'UAT', 'PERF1'],
+          options: ENVIRONMENT_OPTIONS,
           selectedOption: savedEnv,
           storageKey: 'selectedEnvironment',
           onOptionChange: expect.any(Function),
@@ -118,7 +120,7 @@ describe('ReleasedVersions component', () => {
 
       expect(mocks.mockDropdown).toHaveBeenCalledWith(
         {
-          options: ['DEV', 'INT', 'UAT', 'PERF1'],
+          options: ENVIRONMENT_OPTIONS,
           selectedOption: 'UAT',
           storageKey: 'selectedEnvironment',
           onOptionChange: expect.any(Function),

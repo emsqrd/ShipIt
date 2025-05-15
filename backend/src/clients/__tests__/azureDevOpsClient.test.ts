@@ -112,6 +112,8 @@ describe('AzureDevOpsClient', () => {
           templateParameters: {
               env: 'uat',
           },
+          state: 'completed',
+          result: 'succeeded',
           createdDate: '06/16/2012',
         }],
       };
