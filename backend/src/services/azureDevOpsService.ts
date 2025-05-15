@@ -196,20 +196,17 @@ async function getMostRecentReleasePipelineRunByEnvironment(
 
   // Get the most recent run for the environment
   if (pipeline.folder === config.MANUAL_RELEASE_DIRECTORY) {
-    const perfEnvironments = [ENVIRONMENT.PERF1, ENVIRONMENT.PERF2];
-    const prodEnvironments = [ENVIRONMENT.PROD1, ENVIRONMENT.PROD2];
+    // PERF & PROD have pipelines that allow for deploying to both environments so we need to account for that
+    const pairedEnv: Partial<Record<ENVIRONMENT, ENVIRONMENT>> = {
+      [ENVIRONMENT.PERF1]: ENVIRONMENT.PERF1_2,
+      [ENVIRONMENT.PERF2]: ENVIRONMENT.PERF1_2,
+      [ENVIRONMENT.PROD1]: ENVIRONMENT.PROD1_2,
+      [ENVIRONMENT.PROD2]: ENVIRONMENT.PROD1_2,
+    };
 
-    // start with the target environment
-    const combinedEnvironments = [environment];
-
-    // if it's one of the perf environments, add PERF1_2
-    if (perfEnvironments.includes(environment)) {
-      combinedEnvironments.push(ENVIRONMENT.PERF1_2);
-    }
-
-    if (prodEnvironments.includes(environment)) {
-      combinedEnvironments.push(ENVIRONMENT.PROD1_2);
-    }
+    const combinedEnvironments = [environment, pairedEnv[environment]].filter(
+      (env): env is ENVIRONMENT => !!env,
+    );
 
     // pick the first run whose env is in that list
     mostRecentPipelineRun = sortedRuns.find((run) => {
