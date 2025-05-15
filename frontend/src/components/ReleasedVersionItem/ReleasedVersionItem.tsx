@@ -1,26 +1,67 @@
+import { useState } from 'react';
+
+import azureRepoIcon from '../../assets/azure_repo.svg';
 import type { ReleasedVersion } from '../../contracts/ReleasedVersion';
 import styles from './ReleasedVersionItem.module.css';
 
-const ReleasedVersionItem: React.FC<ReleasedVersion> = ({
-  repo,
-  pipelineName,
-  runName,
-  version,
-}) => {
+interface ReleasedVersionItemProps {
+  releasedVersion: ReleasedVersion;
+}
+
+const ReleasedVersionItem: React.FC<ReleasedVersionItemProps> = ({ releasedVersion }) => {
+  const [isFlipped, setFlipped] = useState(false);
+
   return (
-    <div className={styles['version-item']}>
-      <span data-testid="repo-column" className={styles['repo-column']}>
-        <div className={styles['repo-name']}>{repo}</div>
-      </span>
-      <span data-testid="pipeline-column" className={styles['pipeline-column']}>
-        <div className={styles['pipeline-name']}>{pipelineName}</div>
-      </span>
-      <span data-testid="run-column" className={styles['run-column']}>
-        <div className={styles['run-name']}>{runName}</div>
-      </span>
-      <span data-testid="version-column" className={styles['version-column']}>
-        <div className={styles['version-tag']}>{version}</div>
-      </span>
+    <div className={styles.cardContainer}>
+      <div className={`${styles.card} ${isFlipped ? styles.flipped : ''}`}>
+        <div className={styles.front}>
+          <div className={styles.cardContent}>
+            <div data-testid="repo-column" className={styles.repoSection}>
+              <span className={styles.badgeIcon}>
+                <img src={azureRepoIcon} className={styles.badgeIconImage} />
+              </span>
+              <div className={styles.repo}>{releasedVersion.repo}</div>
+            </div>
+            <div data-testid="version-column" className={styles.versionSection}>
+              <div className={styles.version}>{releasedVersion.version}</div>
+            </div>
+          </div>
+          <div className={styles.cardFooter}>
+            <div className={styles.buttonContainer}>
+              <button
+                className={styles.detailsButton}
+                type="button"
+                onClick={() => setFlipped((f) => !f)}
+              >
+                Details
+              </button>
+            </div>
+          </div>
+        </div>
+        <div className={styles.back}>
+          <div className={styles.cardContent}>
+            <div data-testid="pipeline-column" className={styles.pipeline}>
+              <label>Pipeline</label>
+              <div className={styles.pipeline}>{releasedVersion.pipelineName}</div>
+            </div>
+            <div data-testid="run-column" className={styles.run}>
+              <label>Run</label>
+              <div className={styles.run}>{releasedVersion.runName}</div>
+            </div>
+          </div>
+          <div className={styles.cardFooter}>
+            <div className={styles.buttonContainer}>
+              <button
+                className={styles.detailsButton}
+                type="button"
+                onClick={() => setFlipped((f) => !f)}
+              >
+                Back
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

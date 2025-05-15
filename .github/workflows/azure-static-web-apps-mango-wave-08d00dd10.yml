@@ -7,13 +7,13 @@ on:
     branches:
       - master
     paths:
-      - 'backend/**'
+      - 'frontend/**'
   pull_request:
     types: [opened, closed, ready_for_review, synchronize]
     branches:
       - master
     paths:
-      - 'backend/**'
+      - 'frontend/**'
   workflow_dispatch:
 
 jobs:

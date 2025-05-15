@@ -14,14 +14,12 @@ const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 describe('releasedVersionsService', () => {
   const mockReleasedVersions: ReleasedVersion[] = [
     {
-      id: 1,
       repo: 'repo1',
       pipelineName: 'pipeline1',
       runName: 'run1',
       version: '1.0.0',
     },
     {
-      id: 2,
       repo: 'repo2',
       pipelineName: 'pipeline2',
       runName: 'run2',

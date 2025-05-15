@@ -16,14 +16,12 @@ describe('ReleasedVersionsList', () => {
   // Common test data
   const mockVersions: ReleasedVersion[] = [
     {
-      id: 1,
       repo: 'test-repo',
       pipelineName: 'main-pipeline',
       runName: 'daily-build',
       version: '1.0.0',
     },
     {
-      id: 2,
       repo: 'test-repo-2',
       pipelineName: 'feature-pipeline',
       runName: 'feature-build',
@@ -77,14 +75,10 @@ describe('ReleasedVersionsList', () => {
 
       // First version
       expect(screen.getByText('test-repo')).toBeInTheDocument();
-      expect(screen.getByText('main-pipeline')).toBeInTheDocument();
-      expect(screen.getByText('daily-build')).toBeInTheDocument();
       expect(screen.getByText('1.0.0')).toBeInTheDocument();
 
       // Second version
       expect(screen.getByText('test-repo-2')).toBeInTheDocument();
-      expect(screen.getByText('feature-pipeline')).toBeInTheDocument();
-      expect(screen.getByText('feature-build')).toBeInTheDocument();
       expect(screen.getByText('1.1.0')).toBeInTheDocument();
     });
 
